@@ -5,7 +5,7 @@
 // POST /api/state            -> body {order, skip}; stores it with a new version, returns it
 
 const KEY = "grezzo-biennale:state";
-const ZONES = ["sm", "ars", "gia"];
+const ZONES = ["zs", "sm", "ars", "gia"];
 
 function creds() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
