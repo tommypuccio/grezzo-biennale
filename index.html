@@ -84,7 +84,8 @@ a{color:inherit}
 .list{display:flex;flex-direction:column;gap:10px}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
 .stop.current{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink) inset}
-.stop.past{opacity:.5}
+.stop.past .row{opacity:.55}
+.stop.past:has(.det:not([hidden])) .row{opacity:1}
 .row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:14px}
 .time{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;line-height:1.1}
 .time small{display:block;color:var(--muted);font-weight:600;font-size:12px;margin-top:3px}
@@ -540,7 +541,7 @@ img{max-width:100%}
       var d=DATA[+n.dataset.i], s=m(d.t[0]), e=m(d.t[1]);
       n.classList.remove("current","past");
       var c=n.querySelector(".nowchip"); if(c) c.innerHTML="";
-      if (nowM>=e) n.classList.add("past");
+      if (nowM>=e){ n.classList.add("past"); if(c) c.innerHTML='<span class="chip">Fatta</span>'; }
       else if (nowM>=s && nowM<e){ n.classList.add("current"); cur={n:n,d:d}; if(c) c.innerHTML='<span class="chip now">Adesso</span>'; }
       else if (!next) next={n:n,d:d};
     });
