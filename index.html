@@ -351,7 +351,7 @@ img{max-width:100%}
         <li><b>Maps</b> apre la tappa in Google Maps.</li>
       </ul>
       <h2>Modifiche condivise</h2>
-      <p>Saltare o spostare una tappa cambia il giro per tutti: sugli altri telefoni arriva in un paio di secondi.</p>
+      <p>Saltare o spostare una tappa cambia il giro per tutti: sugli altri telefoni arriva in pochi secondi.</p>
       <div class="tip"><p id="syncnow">Collegamento in corso</p></div>
       <ul>
         <li>Pallino rosa accanto all'ora: collegati.</li>
@@ -833,7 +833,7 @@ img{max-width:100%}
   document.addEventListener("mouseup",function(){ if(Date.now()-lastTouch>800) gEnd(); });
   stopsEl.addEventListener("contextmenu",function(e){ if(e.target.closest&&e.target.closest(".stop .row")) e.preventDefault(); });
 
-  // ---------- shared state: Vercel function + Upstash Redis, polled every 2 s ----------
+  // ---------- shared state: Vercel function + Upstash Redis, polled every 4 s ----------
   var API_OK = /^https?:$/.test(location.protocol);
   var SY={busy:false,pending:load("gb-pending",false)};
   var SYNC_TXT={live:"Collegato: le modifiche arrivano a tutti",sync:"Invio in corso",offline:"Offline: le modifiche partono appena torna la rete",local:"Database non attivo: le modifiche restano su questo telefono",init:"Collegamento in corso"};
@@ -877,7 +877,7 @@ img{max-width:100%}
       })
       .catch(function(e){ SY.busy=false; setSync(e&&e.local?"local":"offline"); });
   }
-  setInterval(function(){ if(!document.hidden) pull(); },2000);
+  setInterval(function(){ if(!document.hidden) pull(); },4000);
   window.addEventListener("online",pull);
 
   // reset, with an in-page confirmation step
