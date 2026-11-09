@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Biennale">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>GREZZO Biennale 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: phone-first day planner in the GREZZO.PAY look; sticky live-time bar, one column of stops, tap to open the on-camera notes. Single dark theme on purpose. */
+:root{
+  --bg:#0b0b0c;
+  --card:#151517;
+  --card-2:#1c1c1f;
+  --line:#2a2a2e;
+  --fg:#f4f4f5;
+  --muted:#8b8b93;
+  --pink:#ff2e93;
+  --pink-ink:#160009;
+  --pink-soft:rgba(255,46,147,.12);
+  --font:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{
+  background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 96px;-webkit-font-smoothing:antialiased;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--pink);outline-offset:2px;border-radius:8px}
+.wrap{max-width:640px;margin:0 auto}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 12px;border-bottom:1px solid var(--line)}
+.brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1;margin:0}
+.brand b{color:var(--pink)}
+.clock{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-variant-numeric:tabular-nums;font-size:17px;white-space:nowrap}
+.clock span{color:var(--muted);font-weight:500;margin-right:4px}
+.tabs{display:flex;gap:8px;margin-top:12px}
+.tab{flex:1;background:var(--card);border:1px solid var(--line);color:var(--muted);font:700 13px/1 var(--font);letter-spacing:.12em;text-transform:uppercase;padding:11px 8px;border-radius:12px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-color:var(--pink);background:var(--pink-soft)}
+
+/* now panel */
+.now{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;min-width:0}
+.tile.hot{border-color:var(--pink)}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.big{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums}
+.hot .big{color:var(--pink)}
+.sub{font-size:13px;color:var(--muted);margin-top:6px}
+.nowwide{grid-column:1/-1}
+.nowwide .big{font-size:20px;color:var(--fg)}
+.nowwide .sub b{color:var(--fg);font-weight:700}
+.bar{height:6px;background:var(--card-2);border-radius:99px;margin-top:12px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--pink);border-radius:99px;transition:width .6s ease}
+.note{font-size:12px;color:var(--muted);margin:10px 2px 0}
+.jump{margin-top:10px;width:100%;background:var(--pink);color:var(--pink-ink);border:0;font:800 15px/1 var(--font);padding:14px;border-radius:14px;cursor:pointer}
+
+/* cut stepper */
+.cut{margin-top:22px}
+.cuthead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.steps{display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.step{min-width:36px;flex:1;background:var(--card);border:1px solid var(--line);color:var(--muted);font:700 14px/1 var(--font);padding:10px 0;border-radius:10px;cursor:pointer;font-variant-numeric:tabular-nums}
+.step[aria-pressed="true"]{background:var(--pink);border-color:var(--pink);color:var(--pink-ink)}
+
+/* stops */
+#stops{display:flex;flex-direction:column;gap:16px}
+.sec{margin:22px 2px 0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sec h2{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0}
+.sec span{font-size:13px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:10px}
+.stop{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.stop.current{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink) inset}
+.stop.past{opacity:.5}
+.row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:14px}
+.time{font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;line-height:1.1}
+.time small{display:block;color:var(--muted);font-weight:600;font-size:12px;margin-top:3px}
+.main{min-width:0;background:none;border:0;color:inherit;text-align:left;font:inherit;padding:0;cursor:pointer}
+.ttl{font-weight:800;font-size:17px;line-height:1.2;letter-spacing:-.01em}
+.meta{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin-top:6px;font-size:12px;color:var(--muted)}
+.dots{display:inline-flex;gap:3px}
+.dots i{width:9px;height:9px;border-radius:2px;background:var(--line)}
+.dots i.on{background:var(--pink)}
+.chip{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:4px 7px;border-radius:6px;border:1px solid var(--line);color:var(--muted)}
+.chip.keep{border-color:var(--pink);color:var(--pink)}
+.chip.cutn{background:var(--card-2)}
+.chip.now{background:var(--pink);border-color:var(--pink);color:var(--pink-ink)}
+.maps{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--card-2);font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap}
+.maps svg{width:16px;height:16px}
+.maps:hover{border-color:var(--pink)}
+.det{border-top:1px solid var(--line);padding:14px 16px 16px;display:grid;gap:12px}
+.det p{margin:0;color:#d6d6da;max-width:62ch}
+.det h3{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pink);margin:0}
+.det ul{margin:0;padding-left:18px;display:grid;gap:6px}
+.det li{max-width:62ch}
+.det li::marker{color:var(--pink)}
+.src{display:flex;flex-wrap:wrap;gap:8px}
+.src a{font-size:13px;font-weight:600;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:var(--card-2)}
+.src a:hover{border-color:var(--pink)}
+.move{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:10px 14px;border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:14px}
+.move.current{border-color:var(--pink);border-style:solid;color:var(--fg)}
+.move.past{opacity:.5}
+.move .time{font-size:14px;color:var(--muted)}
+.move .maps{height:34px;font-size:12px}
+.hiddeninfo{font-size:13px;color:var(--muted);margin:10px 2px 0}
+
+/* reading views */
+.read{padding-top:8px}
+.read h2{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:26px 0 10px;text-wrap:balance}
+.read h3{font-size:16px;font-weight:800;margin:22px 0 6px}
+.read p{margin:0 0 12px;color:#d6d6da;max-width:65ch}
+.read ul{margin:0 0 12px;padding-left:18px;display:grid;gap:8px}
+.read li::marker{color:var(--pink)}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+.facts div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.facts b{display:block;font-size:15px;margin-top:4px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;margin:8px 0 16px}
+.tbl table{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.tbl td b{color:var(--pink)}
+.tip{background:var(--pink-soft);border:1px solid var(--pink);border-radius:14px;padding:14px;margin:16px 0}
+.tip p{margin:0;color:var(--fg)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media (max-width:380px){.row{grid-template-columns:54px 1fr;}.row .maps{grid-column:1/-1}.big{font-size:22px}}
+</style>
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow">
+      <h1 class="brand">GREZZO<b>.</b>BIENNALE</h1>
+      <div class="clock" id="clock" aria-live="off"><span>ora</span>--:--</div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-giro" data-view="giro" aria-selected="true">Giro</button>
+      <button class="tab" role="tab" id="t-intro" data-view="intro" aria-selected="false">Intro</button>
+      <button class="tab" role="tab" id="t-info" data-view="info" aria-selected="false">Info</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="v-giro">
+      <div class="now">
+        <div class="tile hot">
+          <p class="lbl" id="trainlbl">Al treno 18:05</p>
+          <div class="big" id="train">--</div>
+          <div class="sub">Venezia SL → Firenze SMN</div>
+        </div>
+        <div class="tile">
+          <p class="lbl" id="boatlbl">Vaporetto finale</p>
+          <div class="big" id="boat">--</div>
+          <div class="sub">Giardini → Ferrovia</div>
+        </div>
+        <div class="tile nowwide">
+          <p class="lbl" id="nowlbl">Adesso</p>
+          <div class="big" id="nowttl">--</div>
+          <div class="sub" id="nowsub"></div>
+          <div class="bar" aria-hidden="true"><i id="dayprog"></i></div>
+        </div>
+      </div>
+      <p class="note" id="daynote" hidden></p>
+      <button class="jump" id="jump">Vai alla tappa di adesso</button>
+
+      <div class="cut">
+        <div class="cuthead"><p class="lbl" style="margin:0">Tempo stretto? Taglia fino a</p><span class="sub" id="cutinfo" style="margin:0"></span></div>
+        <div class="steps" id="steps"></div>
+      </div>
+
+      <div id="stops"></div>
+    </section>
+
+    <section id="v-intro" class="read" hidden>
+      <h2>La Biennale di Venezia</h2>
+      <p class="lbl">Testo di Elena, edizione 2026</p>
+      <h3>1. Cos'è la Biennale di Venezia?</h3>
+      <p>La Biennale di Venezia è una delle istituzioni culturali più importanti e prestigiose a livello internazionale. Nasce con l'obiettivo di promuovere e mettere in dialogo le diverse forme di espressione artistica contemporanea, diventando un punto d'incontro tra artisti, curatori, istituzioni e pubblico proveniente da tutto il mondo.</p>
+      <p>Non si tratta semplicemente di una grande mostra d'arte, ma di una piattaforma internazionale in cui vengono presentate nuove idee, linguaggi, sperimentazioni e riflessioni sulla società e sul mondo in cui viviamo.</p>
+      <p>Oggi comprende sei settori: Arte, Architettura, Cinema, Teatro, Musica e Danza. Ognuno di questi rappresenta un'occasione per esplorare come la cultura e la creatività possano interpretare il presente e anticipare nuovi scenari.</p>
+      <h3>2. Quando nasce e perché?</h3>
+      <p>La sua storia inizia nel 1895, quando a Venezia viene organizzata la prima Esposizione Internazionale d'Arte.</p>
+      <p>L'idea nasce dalla volontà di creare un appuntamento capace di riunire artisti italiani e internazionali, offrendo loro uno spazio in cui esporre le proprie opere e confrontarsi con culture e visioni differenti.</p>
+      <p>Nel corso del Novecento, la Biennale si è progressivamente ampliata: nel 1930 nasce il settore Musica, nel 1932 la Mostra Internazionale d'Arte Cinematografica, nel 1934 il settore Teatro, nel 1980 la Biennale Architettura e nel 1999 la Danza.</p>
+      <p>Da allora è diventata un osservatorio privilegiato sulle trasformazioni artistiche e culturali a livello internazionale.</p>
+      <h3>3. Come funziona e chi la organizza?</h3>
+      <p>La Biennale è un'istituzione culturale organizzata attraverso una struttura che coordina i diversi settori e le relative manifestazioni.</p>
+      <p>Per quanto riguarda la Biennale Arte, che si svolge ogni due anni, il progetto si sviluppa principalmente attraverso tre elementi:</p>
+      <ul>
+        <li><b>La Mostra Internazionale</b>: un'esposizione collettiva organizzata attorno a un tema scelto da un curatore o una curatrice internazionale, che seleziona gli artisti e costruisce un percorso concettuale.</li>
+        <li><b>I Padiglioni Nazionali</b>: ogni Paese partecipante presenta un proprio progetto espositivo, generalmente affidato a un artista e a un curatore. È una sorta di rappresentazione della propria scena artistica e culturale.</li>
+        <li><b>Gli Eventi Collaterali</b>: mostre e progetti indipendenti distribuiti in diversi spazi della città, che ampliano il dialogo con la manifestazione principale.</li>
+      </ul>
+      <p>Le sedi più importanti sono i Giardini della Biennale e l'Arsenale, ma durante la manifestazione Venezia si trasforma in un vero e proprio percorso espositivo diffuso.</p>
+      <p>L'attuale presidente dell'istituzione è Pietrangelo Buttafuoco.</p>
+      <h3>4. Il tema della Biennale 2026: In Minor Keys</h3>
+      <p>Arriviamo all'edizione di quest'anno: la 61ª Esposizione Internazionale d'Arte, intitolata In Minor Keys, curata da Koyo Kouoh.</p>
+      <p>Il titolo può essere tradotto come In tonalità minori e prende ispirazione dal linguaggio musicale.</p>
+      <p>L'idea alla base della mostra è quella di spostare l'attenzione dalle voci più forti e dominanti del nostro tempo verso quelle più silenziose, marginali e spesso meno ascoltate.</p>
+      <p>In un mondo caratterizzato da sovraccarico di informazioni, conflitti, velocità e continua esposizione, la mostra invita a rallentare, ascoltare e riscoprire altre forme di sensibilità e conoscenza.</p>
+      <p>Il progetto esplora temi come la memoria, le identità culturali, il rapporto con la natura, il colonialismo, la responsabilità sociale e la possibilità di immaginare nuove forme di convivenza.</p>
+      <p>C'è però un elemento particolarmente importante da conoscere: Koyo Kouoh, curatrice e direttrice artistica del progetto, è scomparsa prematuramente nel maggio 2025, prima dell'apertura della mostra.</p>
+      <p>La Biennale ha quindi deciso, con il sostegno della sua famiglia e del suo team, di portare avanti il progetto secondo la visione che aveva già sviluppato, rispettandone le scelte artistiche e curatoriali.</p>
+      <p>La mostra è aperta dal 9 maggio al 22 novembre 2026.</p>
+      <h3>5. Perché è importante?</h3>
+      <p>Perché rappresenta uno spazio in cui l'arte non viene semplicemente esposta, ma diventa uno strumento per leggere e interpretare il presente.</p>
+      <p>È un luogo di confronto tra culture, generazioni e linguaggi differenti, dove emergono nuove prospettive e si mettono in discussione quelle già consolidate.</p>
+      <p>Il suo valore non risiede soltanto nelle opere che vengono presentate, ma anche nelle conversazioni che riesce a generare, nelle relazioni che costruisce e nelle domande che lascia aperte.</p>
+      <p>In questo senso, la Biennale non è soltanto una fotografia dello stato dell'arte contemporanea: è anche un modo per capire quali questioni, tensioni e immaginari stanno attraversando la nostra società.</p>
+      <h3>Alcuni concetti da ricordare</h3>
+      <div class="facts">
+        <div><p class="lbl">Fondazione</p><b>1895</b></div>
+        <div><p class="lbl">Prima esposizione</p><b>30 aprile 1895</b></div>
+        <div><p class="lbl">Edizione Arte 2026</p><b>61ª</b></div>
+        <div><p class="lbl">Titolo</p><b>In Minor Keys</b></div>
+        <div><p class="lbl">Curatrice</p><b>Koyo Kouoh</b></div>
+        <div><p class="lbl">Presidente</p><b>Pietrangelo Buttafuoco</b></div>
+        <div><p class="lbl">Sedi principali</p><b>Giardini e Arsenale</b></div>
+        <div><p class="lbl">Date 2026</p><b>9 maggio, 22 novembre</b></div>
+      </div>
+      <div class="tip"><p>Un suggerimento editoriale: secondo me, il punto più interessante da approfondire in un racconto sulla Biennale è proprio il suo ruolo di osservatorio culturale. Non limitarsi a spiegare che è una manifestazione in cui vengono esposte opere d'arte, ma far capire che è uno spazio in cui si decide, si discute e si mette in discussione ciò che oggi consideriamo arte, cultura e contemporaneità. È questo che la rende interessante anche per chi non proviene direttamente dal mondo dell'arte.</p></div>
+
+      <h2>Il contesto 2026, in pillole</h2>
+      <p>La Biennale più discussa degli ultimi anni: un buon gancio per aprire il video.</p>
+      <ul>
+        <li>Koyo Kouoh è la prima curatrice africana a dirigere la mostra. L'ha completata il suo team dopo la sua morte.</li>
+        <li>Record: 100 padiglioni nazionali e 7 paesi alla prima volta, tra cui il Qatar.</li>
+        <li>La giuria internazionale si è dimessa il 30 aprile. Al posto dei Leoni d'oro, due Leoni dei visitatori votati dal pubblico che ha visto sia Giardini sia Arsenale. Si annunciano il 22 novembre.</li>
+        <li>Russia: padiglione chiuso al pubblico per tutta la Biennale per le sanzioni. Si sbircia solo dalle finestre.</li>
+        <li>Israele: il padiglione ai Giardini è chiuso per restauro, la mostra è all'Arsenale. L'8 maggio una ventina di padiglioni ha chiuso per un giorno in sciopero contro la sua partecipazione.</li>
+        <li>Venezuela: padiglione chiuso con la scritta "rinascerà presto". L'edificio è di Carlo Scarpa, lo stesso del Negozio Olivetti.</li>
+        <li>Il filo rosso per molti critici è la performance: Austria, Belgio, Paesi Bassi.</li>
+      </ul>
+      <div class="src">
+        <a href="https://www.domusweb.it/it/speciali/biennale-arte-venezia-2026/gallery/2026/biennale-arte-2026-padiglioni-mostre-migliori-da-vedere-venezia.html" target="_blank" rel="noopener">Domus, i padiglioni</a>
+        <a href="https://www.theartnewspaper.com/2026/05/08/the-big-review-%7C-venice-biennale-2026-in-minor-keys-12" target="_blank" rel="noopener">The Art Newspaper, recensione</a>
+        <a href="https://www.artribune.com/arte-contemporanea-2/2026/05/padiglione-russia-chiuso-biennale-venezia-relazione-ispettori/" target="_blank" rel="noopener">Artribune, Russia</a>
+        <a href="https://www.theartnewspaper.com/2026/05/08/venice-biennale-strike-sees-nearly-20-pavilions-temporarily-close" target="_blank" rel="noopener">The Art Newspaper, sciopero</a>
+      </div>
+    </section>
+
+    <section id="v-info" class="read" hidden>
+      <h2>Treni</h2>
+      <div class="tbl"><table>
+        <tr><th>Tratta</th><th>Partenza</th><th>Arrivo</th></tr>
+        <tr><td>Firenze SMN → Venezia SL</td><td>07:39</td><td>09:55</td></tr>
+        <tr><td>Venezia SL → Firenze SMN</td><td><b>18:05</b></td><td>20:20</td></tr>
+      </table></div>
+
+      <h2>Biglietti</h2>
+      <div class="tbl"><table>
+        <tr><th>Cosa</th><th>Costo</th></tr>
+        <tr><td>Biennale: Giardini + Arsenale, padiglioni compresi</td><td>30 € (16 € under 26), solo online, un ingresso per sede</td></tr>
+        <tr><td>Taiwan, Etiopia</td><td>gratis</td></tr>
+        <tr><td>Zimbabwe, Kazakhstan</td><td>di norma gratis</td></tr>
+        <tr><td>Negozio Olivetti</td><td>circa 13 €</td></tr>
+        <tr><td>Vaporetto</td><td>9,50 € a corsa</td></tr>
+      </table></div>
+
+      <h2>Orari da ricordare</h2>
+      <ul>
+        <li>Giardini e Arsenale: 10-18, ultimo ingresso 17:45.</li>
+        <li>Belgio: performance oggi tutto il giorno, pausa 13-14.</li>
+        <li>Negozio Olivetti: ultimo ingresso 30 minuti prima della chiusura.</li>
+        <li>Arsenale: si esce dal Ponte dei Pensieri, il lato verso i Giardini.</li>
+      </ul>
+
+      <h2>Chiusi martedì</h2>
+      <ul>
+        <li>Padiglione Austria (l'acquario) e Paesi Bassi, ai Giardini.</li>
+        <li>Russia e Venezuela: chiusi per tutta la Biennale.</li>
+        <li>Peggy Guggenheim, Palazzo Grassi, Punta della Dogana, Fondazione Prada, SMAC, Palazzo Bembo, Canicula all'Ospedaletto.</li>
+        <li>Fondazione Dries Van Noten: mostra finita il 4 ottobre.</li>
+      </ul>
+      <div class="src">
+        <a href="https://www.labiennale.org/en/art/2026/prepare-your-visit" target="_blank" rel="noopener">Biennale, orari speciali</a>
+        <a href="https://www.labiennale.org/en/art/2026/information" target="_blank" rel="noopener">Biennale, biglietti</a>
+        <a href="https://itneverssst.be/venice-biennale/" target="_blank" rel="noopener">Belgio, performance</a>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function(){
+  var MAPS = function(q, pid){
+    var u = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+    if (pid) u += "&query_place_id=" + encodeURIComponent(pid);
+    return u;
+  };
+  var P = {
+    sm:  MAPS("Negozio Olivetti, Piazza San Marco 101, Venezia","ChIJ5R1tQtexfkcR8uQ3f51Qr-s"),
+    pri: MAPS("Palazzo delle Prigioni, Riva degli Schiavoni 4209, Venezia","ChIJ_9wahNuxfkcRYMdSV5n3YOc"),
+    ars: MAPS("Arsenale della Biennale, Campo de la Tana 2169, Venezia","ChIJHT_BXQCvfkcRi_-bjwmNdJM"),
+    gia: MAPS("Giardini della Biennale, Venezia","ChIJqzZkRzGufkcRiabs3CYIiBk"),
+    fer: MAPS("Venezia Santa Lucia","ChIJ8dEcUcexfkcRCZPKgPIBfPw")
+  };
+  var DOMUS = "https://www.domusweb.it/it/speciali/biennale-arte-venezia-2026/gallery/2026/biennale-arte-2026-padiglioni-mostre-migliori-da-vedere-venezia.html";
+  var FINESTRE = "https://www.finestresullarte.info/en/news-focus/venice-biennale-2026-kicks-off-which-pavilions-not-to-miss";
+
+  // t = [start, end] in "HH:MM"; kind: "stop" | "move"; cut: number (order to drop) | "keep" | null
+  var DATA = [
+    {sec:"San Marco e Riva"},
+    {kind:"move", t:["09:55","10:40"], ttl:"Arrivo, vaporetto linea 2 o 1 per San Marco", note:"circa 35 min, scendete a San Marco", map:MAPS("Venezia Ferrovia vaporetto")},
+    {kind:"stop", id:"olivetti", t:["10:45","11:15"], ttl:"Negozio Olivetti", sub:"Leandro Erlich, Hybrids", stars:3, cut:7, map:P.sm,
+      what:"Uno showroom degli anni '50 diventato monumento: lo ha progettato Carlo Scarpa nel 1957-58 per Adriano Olivetti, che lo voleva come biglietto da visita in Piazza San Marco. Oggi lo gestisce il FAI. Dentro, circa venti sculture dell'argentino Leandro Erlich.",
+      say:["Un negozio che è un'opera d'arte: il primo concept store prima che esistesse la parola.","Erlich mescola natura, architettura e corpo umano: nascono creature ibride, impossibili ma familiari.","Da cercare: Papillon, una farfalla di bronzo con le ali a forma di orecchie.","Erlich non ha toccato l'architettura di Scarpa: ha scelto di giocare dentro lo spazio.","Erlich è famoso per le illusioni, come la piscina in cui la gente sembra camminare sott'acqua."],
+      src:[["FAI, intervista a Erlich","https://fondoambiente.it/news/leandro-erlich-librido-non-e-piu-uneccezione-e-la-condizione-delluomo-contemporaneo"],["Domus","https://www.domusweb.it/it/arte/2026/03/17/le-sculture-ibride-di-leandro-erlich-a-venezia-nel-negozio-olivetti.html"],["Finestre sull'Arte","https://www.finestresullarte.info/mostre/leandro-erlich-al-negozio-olivetti-sculture-ibride-per-biennale-arte-2026"]]},
+    {kind:"stop", id:"taiwan", t:["11:20","11:55"], ttl:"Taiwan, Palazzo delle Prigioni", sub:"Li Yi-Fan, Screen Melancholy", stars:4, cut:"keep", map:P.pri,
+      what:"Siamo nelle Prigioni Nuove, le carceri della Repubblica collegate a Palazzo Ducale dal Ponte dei Sospiri. Taiwan espone qui come evento collaterale dal 1995, perché non ha un padiglione ai Giardini. Ingresso gratuito.",
+      say:["L'artista è nato a Taipei nel 1989: il più giovane a rappresentare Taiwan da oltre dieci anni.","Il video è fatto con un motore grafico da videogioco: un pupazzo digitale in loop, dentro una copia virtuale di questo stesso palazzo.","Il tema è la malinconia da schermo: l'ansia di chi vive davanti a un display. Humour nero, monologhi in inglese e cinese.","Una battuta: come piangere nell'era degli short, dove una lacrima di più di 3 secondi non è efficiente.","Sparsi in giro, enormi arti e teste stampati in 3D: ci si siede sopra e si ricarica il telefono.","Gancio GREZZO: una prigione vera che racconta la prigione degli schermi."],
+      src:[["Domus","https://www.domusweb.it/it/speciali/biennale-arte-venezia-2026/gallery/2026/biennale-arte-2026-padiglioni-mostre-migliori-da-vedere-venezia.html"],["Taiwan News","https://www.taiwannews.com.tw/en/news/6365184"],["Taipei Times","https://www.taipeitimes.com/News/editorials/archives/2026/05/17/2003857459"],["Biennale","https://www.labiennale.org/en/node/19766"]]},
+    {kind:"stop", id:"zimbabwe", t:["12:00","12:15"], ttl:"Zimbabwe", sub:"Second Nature | Manyonga, Santa Maria della Pietà", stars:4, cut:null, map:MAPS("Santa Maria della Pietà, Castello 3701, Venezia"),
+      what:"Sulla Riva, a due minuti da Taiwan. Il tema è la neuroplasticità: come il cervello si riorganizza davanti a tecnologia e crisi.",
+      say:["Cinque artisti: Eva Raath, Felix Shumba, Franklyn Dzingai, Gideon Gomo, Pardon Mapondera.","La domanda: cosa resta di umano quando la logica delle macchine diventa una seconda natura?","Da cercare: il grande lavoro su carta di Felix Shumba, circa 6 metri per 2. Per Finestre sull'Arte è tra le 4-5 opere migliori di tutta la Biennale."],
+      src:[["Finestre sull'Arte",FINESTRE],["My Art Guides","https://myartguides.com/national-participations/venice/zimbabwe-republic-of-2026/"]]},
+    {kind:"stop", id:"etiopia", t:["12:15","12:25"], ttl:"Etiopia", sub:"Tegene Kunbi, Shapes of Silence, Palazzo Bollani", stars:3, cut:3, map:MAPS("Palazzo Bollani, Castello 3647, Venezia"),
+      what:"Accanto alla Pietà. Seconda partecipazione dell'Etiopia, dopo il debutto nel 2024. Ingresso gratuito.",
+      say:["Il silenzio non come vuoto ma come condizione sociale e politica: in Etiopia può essere saggezza o esclusione.","Kunbi dipinge con i tessuti: quelli tessuti a mano da sua madre, stoffe industriali e paramenti sacri.","Gancio GREZZO: il tessuto come archivio di identità, un ponte diretto con la moda."],
+      src:[["Finestre sull'Arte",FINESTRE],["Culturalee","https://culturalee.art/ethiopia-pavilion-at-la-biennale-di-venezia2026-presents-shapes-of-silence-by-tegene-kunbi/"]]},
+    {kind:"stop", id:"kazakhstan", t:["12:35","12:50"], ttl:"Kazakhstan", sub:"Qoñyr: The Archive of Silence, Museo Storico Navale", stars:3, cut:4, map:MAPS("Museo Storico Navale, Riva San Biasio 2148, Venezia"),
+      what:"Dentro il Museo Storico Navale, davanti all'Arsenale. Primo paese dell'Asia centrale a scegliere curatore e artisti con un bando aperto.",
+      say:["Qoñyr letteralmente vuol dire marrone, ma indica anche un suono profondo e vellutato.","Il titolo viene da un brano tradizionale kazako del compositore Äbiken Khasenov.","Si entra davanti a enormi teste di cavallo, opera di Smail Bayaliyev.","Cinque sale: un viaggio sensoriale tra suono, steppa e memoria."],
+      src:[["Something Curated","https://somethingcurated.com/2026/05/12/kazakhstans-venice-biennale-pavilion/"],["Qazaq Culture","https://qazaqculture.com/en/news/c6c4a64c-9b66-4c35-9548-235fcf33d5f3"]]},
+    {kind:"move", t:["12:50","13:15"], ttl:"Panino veloce in Via Garibaldi", note:"poi ingresso Arsenale da Campo della Tana", map:MAPS("Via Garibaldi, Castello, Venezia")},
+
+    {sec:"Arsenale"},
+    {kind:"stop", id:"ars-mostra", t:["13:15","14:05"], ttl:"Mostra centrale, Arsenale", sub:"In Minor Keys", stars:4, cut:"keep", map:P.ars,
+      what:"L'Arsenale era il cantiere navale della Repubblica: qui dal Trecento si costruivano le navi della flotta. Ora ospita metà della mostra centrale e molti padiglioni nazionali.",
+      say:["Entrando, la prima cosa è una striscia di tessuto con la poesia \"If I must die\" del poeta palestinese Refaat Alareer.","Nomi da segnarsi: Kader Attia, Alice Maher, Berni Searle, Uriel Orlow.","Nelle Sale d'Armi, il Padiglione delle Arti Applicate con Gala Porras-Kim e il Victoria and Albert Museum: come i musei classificano gli oggetti.","Il verdetto di The Art Newspaper: 3 stelle e mezzo, opere da 4 e allestimento da 3."],
+      src:[["The Art Newspaper","https://www.theartnewspaper.com/2026/05/08/the-big-review-%7C-venice-biennale-2026-in-minor-keys-12"],["e-flux criticism","https://www.e-flux.com/criticism/6782422/61st-venice-biennale-in-minor-keys"]]},
+    {kind:"stop", id:"argentina", t:["14:05","14:13"], ttl:"Argentina", sub:"Matías Duville, Monitor Yin Yang", stars:4, cut:null, map:P.ars,
+      what:"Un disegno che diventa paesaggio da attraversare.",
+      say:["Al posto della carta, una distesa di sale con tracce di carbone.","Sale e carbone perché contengono già il tempo: oceani antichi e materia organica.","Il suono cambia in tempo reale con i dati ambientali della laguna, come aria e meteo."],
+      src:[["Domus",DOMUS],["Daily Art Magazine","https://www.dailyartmagazine.com/in-minor-keys-10-must-see-pavilions-from-the-2026-venice-biennale/"]]},
+    {kind:"stop", id:"cile", t:["14:13","14:21"], ttl:"Cile", sub:"Norton Maza, Inter-Reality", stars:4, cut:null, map:P.ars,
+      what:"Sembra un'astronave bianca precipitata dentro l'Arsenale. Si entra solo togliendosi le scarpe.",
+      say:["Il bello è dentro: piccoli mondi da spiare attraverso fessure e aperture.","Una figura umana iperrealistica crea l'effetto uncanny valley.","Funziona quando ti obbliga a rallentare, abbassarti e sbirciare."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"india", t:["14:21","14:31"], ttl:"India", sub:"Geographies of Distance: remembering home", stars:4, cut:null, map:P.ars,
+      what:"Il ritorno dell'India alla Biennale, curato da Amin Jaffer. Il tema: cos'è casa quando il luogo d'origine sparisce o è lontano.",
+      say:["Sumakshi Singh ricostruisce la casa demolita dei nonni a Delhi con sottilissimi fili bianchi sospesi.","Alwar Balasubramaniam lavora con terra che si crepa asciugandosi.","Ranjani Shettar fa sculture ispirate alle piante che sembrano sfidare la gravità.","Skarma Sonam Tashi ricrea case del Ladakh in cartapesta, Asim Waqif usa impalcature di bambù."],
+      src:[["Finestre sull'Arte",FINESTRE],["Domus",DOMUS]]},
+    {kind:"stop", id:"uzbekistan", t:["14:31","14:37"], ttl:"Uzbekistan", sub:"The Aural Sea", stars:3, cut:null, map:P.ars,
+      what:"Il lago d'Aral, uno dei peggiori disastri ecologici di sempre, raccontato tra mito, folklore e fantascienza.",
+      say:["Niente approccio documentario: il paesaggio diventa un archivio vivente di storie.","Gancio: l'Uzbekistan usa arte e design per rifarsi un'immagine nel mondo, con un museo firmato Tadao Ando in arrivo."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"eau", t:["14:37","14:43"], ttl:"Emirati Arabi Uniti", sub:"Washwasha", stars:3, cut:null, map:P.ars,
+      what:"Washwasha in arabo vuol dire sussurro. Sei artisti, tutto costruito sul suono.",
+      say:["Si passa da zone di ascolto silenziose a zone piene di rumore.","Il suono come memoria di città, tradizioni orali e migrazioni."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"lettonia", t:["14:43","14:49"], ttl:"Lettonia", sub:"Untamed Assembly: Backstage of Utopia", stars:3, cut:null, map:P.ars,
+      what:"Il duo MAREUNROL'S e lo stilista Bruno Birmanis raccontano le Untamed Fashion Assemblies, sfilate sperimentali a Riga negli anni '90, dopo la fine dell'URSS.",
+      say:["Allestito come un backstage: gli stender diventano architettura.","Costumi e archivi di un'avanguardia nata nella libertà ritrovata.","Gancio GREZZO: la moda come strumento di libertà politica, il padiglione più vicino ai temi del podcast."],
+      src:[["Finestre sull'Arte",FINESTRE]]},
+    {kind:"stop", id:"lussemburgo", t:["14:49","14:54"], ttl:"Lussemburgo", sub:"Aline Bouvy, La Merde", stars:3, cut:2, map:P.ars,
+      what:"Sì, si chiama proprio così. È un film-saggio sulla vergogna, raccontata attraverso un essere-escremento.",
+      say:["Mescola immagini da storia dell'arte, cultura pop e scienza di corpi che perdono il controllo.","Se siete stanchi si salta: è un film."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"italia", t:["14:54","15:02"], ttl:"Italia", sub:"Chiara Camoni, Con te con tutto, Tese delle Vergini", stars:2, cut:1, map:P.ars,
+      what:"In fondo all'Arsenale. Curato da Cecilia Canziani.",
+      say:["Prima sala: figure di ceramica poco più alte di una persona, fatte di argilla, materiali naturali e scarti di plastica.","Seconda parte: un ambiente domestico con opere di Casorati, Fabro, Melotti e Merz.","Critica tiepida: la prima metà funziona meglio della seconda.","Gancio: edizione criticata per la quasi assenza di artisti italiani nella mostra centrale."],
+      src:[["Finestre sull'Arte",FINESTRE],["Domus",DOMUS]]},
+    {kind:"move", t:["15:02","15:15"], ttl:"Uscita Ponte dei Pensieri, a piedi ai Giardini", note:"10-15 min", map:P.gia},
+
+    {sec:"Giardini"},
+    {kind:"stop", id:"spagna", t:["15:15","15:25"], ttl:"Spagna", sub:"Oriol Vilanova, Los restos", stars:4, cut:null, map:MAPS("Padiglione Spagna, Giardini della Biennale, Venezia"),
+      what:"Un anti-museo fatto di migliaia di cartoline comprate nei mercatini delle pulci in vent'anni.",
+      say:["Nessuna gerarchia, nessuna classificazione: un accumulo che quasi stordisce.","Gancio GREZZO: collezionismo e vintage, il valore che diamo agli oggetti di seconda mano."],
+      src:[["Finestre sull'Arte",FINESTRE]]},
+    {kind:"stop", id:"belgio", t:["15:25","15:45"], ttl:"Belgio", sub:"Miet Warlop, IT NEVER SSST", stars:5, cut:"keep", map:MAPS("Padiglione Belgio, Giardini della Biennale, Venezia"),
+      what:"Per la prima volta il padiglione belga è dedicato alla performance. Oggi è dal vivo tutto il giorno, con pausa 13-14.",
+      say:["Una tribuna di legno coperta di tavolette di gesso con parole in tante lingue: SST, HOLA, OUI, STOP, SALAM.","Sette performer usano il muro di parole come uno strumento musicale: le portano, le trascinano, le rompono.","Ssst è il nostro shh: il titolo dice che il rumore del mondo non si ferma mai.","Le musiche sono di DEEWEE, lo studio dei fratelli Dewaele (Soulwax).","Il padiglione non è mai del tutto silenzioso, nemmeno quando la performance finisce."],
+      src:[["IT NEVER SSST","https://itneverssst.be/venice-biennale/"],["Hyperallergic","https://hyperallergic.com/performance-cuts-through-the-noise-at-the-venice-biennale/"],["Ocula, intervista","https://ocula.com/magazine/conversations/language-music-performance-miet-warlop-interview/"]]},
+    {kind:"stop", id:"centrale", t:["15:45","16:12"], ttl:"Padiglione Centrale", sub:"In Minor Keys, seconda parte", stars:4, cut:"keep", map:P.gia,
+      what:"Appena riaperto dopo il restauro dello studio Labics. È la seconda metà della mostra centrale.",
+      say:["La facciata con le colonne è ammorbidita da piante e mattoni tradizionali: è l'opera di Otobong Nkanga.","All'ingresso, l'enorme abito di piume arancioni di Big Chief Demond Melancon, Amistad Takeover.","Il testo all'ingresso invita a fare un respiro profondo ed espirare: il tono di tutta la mostra.","Nomi da segnarsi: Laurie Anderson, Daniel Lind-Ramos, Walid Raad, Maria Magdalena Campos-Pons."],
+      src:[["Frieze","https://www.frieze.com/ko/article/venice-biennale-2026-review-giardini-central-pavilion"],["Ocula","https://ocula.com/magazine/opinion/in-minor-keys-venice-koyo-kouoh-review-giardini/"],["The Scotsman","https://www.scotsman.com/arts-and-culture/art/venice-biennale-2026-review-full-of-contrasts-and-bold-statements-8556842"]]},
+    {kind:"stop", id:"giappone", t:["16:12","16:22"], ttl:"Giappone", sub:"Ei Arakawa-Nash, Grass Babies, Moon Babies", stars:4, cut:null, map:MAPS("Padiglione Giappone, Giardini della Biennale, Venezia"),
+      what:"208 bambole: ogni visitatore ne prende una in braccio e la porta per tutto il padiglione.",
+      say:["Un QR code attiva una poesia legata alla data di nascita assegnata alla bambola. Alla fine c'è il cambio del pannolino.","L'artista è giapponese-americano e queer: parla di diaspora, eredità familiari e ruoli sociali.","Per il video: l'unico padiglione dove le ragazze diventano parte dell'opera."],
+      src:[["Domus",DOMUS],["Apollo","https://apollo-magazine.com/?p=1042988"]]},
+    {kind:"stop", id:"canada", t:["16:22","16:28"], ttl:"Canada", sub:"Abbas Akhavan, Entre chien et loup", stars:4, cut:null, map:MAPS("Padiglione Canada, Giardini della Biennale, Venezia"),
+      what:"Il padiglione è diventato una serra con ninfee giganti Victoria, visibili anche da fuori attraverso il vetro.",
+      say:["Queste ninfee sudamericane furono portate in Europa dall'Impero britannico e ribattezzate per la regina Vittoria.","I semi arrivano dai Kew Gardens di Londra e sono germogliati all'Orto Botanico di Padova."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"gb", t:["16:28","16:37"], ttl:"Gran Bretagna", sub:"Lubaina Himid, Predicting History: Testing Translation", stars:4, cut:null, map:MAPS("Padiglione Gran Bretagna, Giardini della Biennale, Venezia"),
+      what:"Himid è nata a Zanzibar, ha vinto il Turner Prize ed è una pioniera del Black British Art Movement.",
+      say:["Il tema: cosa vuol dire sentirsi a casa, o fuori posto. Pittura, suono e oggetti.","Le serie hanno titoli di mestieri: Architects, Tailors, Gardeners.","Da cercare: una kanga, il tessuto africano, con scritto \"Is water always useful?\""],
+      src:[["Finestre sull'Arte","https://www.finestresullarte.info/en/contemporary-art/lubaina-himid-brings-a-reflection-on-home-and-belonging-to-the-british-pavilion-in-venice"],["STIRworld","https://www.stirworld.com/see-features-lubaina-himid-s-british-pavilion-on-creating-home-against-the-odds"]]},
+    {kind:"stop", id:"cechia", t:["16:38","16:47"], ttl:"Cechia e Slovacchia", sub:"Il Silenzio della Talpa", stars:4, cut:null, map:MAPS("Padiglione Cechia e Slovacchia, Giardini della Biennale, Venezia"),
+      what:"Protagonista è Mr. M, l'uomo talpa: un artista di strada passato da idolo dei bambini a figura sconfitta e inascoltata.",
+      say:["Vive nelle fogne come il Joker o il clown di It, ma è buono e continua a esibirsi per bambini immaginari.","Il padiglione compie cent'anni. Il motto: \"Fight for the shape of what the world could be\"."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"danimarca", t:["16:47","16:53"], ttl:"Danimarca", sub:"Maja Malou Lyse, Things to come", stars:3, cut:6, map:MAPS("Padiglione Danimarca, Giardini della Biennale, Venezia"),
+      what:"Parte da due fatti veri: cliniche della fertilità che usano porno digitale per migliorare lo sperma dei donatori, e lo sperm racing, le gare tra spermatozoi lanciate da un gruppo di ragazzi americani.",
+      say:["Un video girato in una clinica e contenitori criogenici per lo sperma.","La domanda: cosa succede quando il calo delle nascite diventa irreversibile?","Curiosità: all'inaugurazione c'era Cicciolina."],
+      src:[["Domus",DOMUS]]},
+    {kind:"stop", id:"grecia", t:["16:55","17:05"], ttl:"Grecia", sub:"Andreas Angelidakis, Escape Room", stars:3, cut:5, map:MAPS("Padiglione Grecia, Giardini della Biennale, Venezia"),
+      what:"Rilegge la caverna di Platone nell'epoca della post-verità.",
+      say:["Il padiglione greco aprì nel 1934, l'anno dell'incontro tra Hitler e Mussolini a Venezia.","Per Angelidakis i padiglioni dei Giardini sono caverne coloniali e fasciste congelate.","Più che una mostra sembra un club, con divanetti comodissimi."],
+      src:[["Finestre sull'Arte",FINESTRE],["Domus",DOMUS]]},
+    {kind:"move", t:["17:10","17:50"], ttl:"Vaporetto Giardini → Ferrovia", note:"linee 1, 4.1 o 5.1, circa 40 min. Treno 18:05", map:P.fer}
+  ];
+
+  var pinSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
+  function m(s){var p=s.split(":");return +p[0]*60+ +p[1];}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+  function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+  var cutLevel = load("gb-cut",0);
+  var open = load("gb-open",{});
+
+  // cut stepper
+  var steps = document.getElementById("steps");
+  for (var i=0;i<=7;i++){
+    var b=document.createElement("button");
+    b.className="step"; b.id="cut-"+i; b.type="button";
+    b.textContent = i===0 ? "No" : String(i);
+    b.setAttribute("aria-pressed", String(i===cutLevel));
+    b.dataset.v=i;
+    b.addEventListener("click", function(){ cutLevel=+this.dataset.v; save("gb-cut",cutLevel); render(); });
+    steps.appendChild(b);
+  }
+
+  function stars(n){var s='<span class="dots" aria-label="Voto '+n+' su 5">';for(var i=1;i<=5;i++)s+='<i class="'+(i<=n?'on':'')+'"></i>';return s+'</span>';}
+
+  function render(){
+    [].forEach.call(steps.children,function(b){b.setAttribute("aria-pressed",String(+b.dataset.v===cutLevel));});
+    var html="", hiddenN=0, gained=0;
+    DATA.forEach(function(d,idx){
+      if (d.sec){ html+='<div class="sec"><h2>'+esc(d.sec)+'</h2></div>'; return; }
+      if (d.kind==="stop" && typeof d.cut==="number" && d.cut<=cutLevel){ hiddenN++; gained+=m(d.t[1])-m(d.t[0]); return; }
+      if (d.kind==="move"){
+        html+='<div class="move" data-i="'+idx+'"><div class="time">'+d.t[0]+'</div><div style="min-width:0"><div style="color:var(--fg);font-weight:700">'+esc(d.ttl)+'</div><div style="font-size:12px">'+esc(d.note||"")+'</div></div><a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>';
+        return;
+      }
+      var chip = d.cut==="keep" ? '<span class="chip keep">Fisso</span>' : (typeof d.cut==="number" ? '<span class="chip cutn">Taglio '+d.cut+'</span>' : '');
+      var isOpen = !!open[d.id];
+      html+='<article class="stop" data-i="'+idx+'" id="s-'+d.id+'">'
+        +'<div class="row"><div class="time">'+d.t[0]+'<small>'+d.t[1]+'</small></div>'
+        +'<button class="main" type="button" aria-expanded="'+isOpen+'" aria-controls="d-'+d.id+'" data-id="'+d.id+'"><div class="ttl">'+esc(d.ttl)+'</div>'
+        +'<div class="meta">'+stars(d.stars)+chip+'<span class="nowchip"></span><span>'+esc(d.sub)+'</span></div></button>'
+        +'<a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>'
+        +'<div class="det" id="d-'+d.id+'"'+(isOpen?'':' hidden')+'>'
+        +'<h3>Cosa stiamo guardando</h3><p>'+esc(d.what)+'</p>'
+        +'<h3>Da dire in camera</h3><ul>'+d.say.map(function(s){return '<li>'+esc(s)+'</li>';}).join("")+'</ul>'
+        +'<h3>Per saperne di più</h3><div class="src">'+d.src.map(function(s){return '<a href="'+s[1]+'" target="_blank" rel="noopener">'+esc(s[0])+'</a>';}).join("")+'</div>'
+        +'</div></article>';
+    });
+    document.getElementById("stops").innerHTML = html;
+    document.getElementById("cutinfo").textContent = hiddenN ? (hiddenN+" tappe nascoste, +"+gained+" min") : "nessuna tappa nascosta";
+    [].forEach.call(document.querySelectorAll(".main"),function(btn){
+      btn.addEventListener("click",function(){
+        var id=this.dataset.id, det=document.getElementById("d-"+id), on=det.hidden;
+        det.hidden=!on; this.setAttribute("aria-expanded",String(on));
+        open[id]=on; save("gb-open",open);
+      });
+    });
+    tick();
+  }
+
+  // live time (Europe/Rome)
+  var fmt = new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit",hour12:false});
+  var dfmt = new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"});
+  function dur(min){ if(min<=0) return "0 min"; var h=Math.floor(min/60), mm=min%60; return (h? h+" h ":"")+mm+" min"; }
+  var currentIdx = -1;
+  var DAY = "2026-11-10"; // live mode only on this day (Europe/Rome), from 00:00 to 23:59
+
+  function idle(mode){
+    [].forEach.call(document.querySelectorAll("#stops [data-i]"),function(n){
+      n.classList.remove("current","past");
+      var c=n.querySelector(".nowchip"); if(c) c.innerHTML="";
+    });
+    currentIdx = -1;
+    document.getElementById("trainlbl").textContent = "Treno di ritorno";
+    document.getElementById("boatlbl").textContent = "Ultimo vaporetto";
+    document.getElementById("train").textContent = "18:05";
+    document.getElementById("boat").textContent = "17:10";
+    var lbl=document.getElementById("nowlbl"), ttl=document.getElementById("nowttl"), sub=document.getElementById("nowsub");
+    if (mode === "before"){
+      document.getElementById("dayprog").style.width = "0%";
+      lbl.textContent = "Martedì 10 novembre";
+      ttl.textContent = "Treno 07:39 da Firenze SMN";
+      sub.innerHTML = "Arrivo a Venezia alle <b>09:55</b>. Conto alla rovescia e tappa di adesso si attivano martedì a mezzanotte.";
+    } else {
+      document.getElementById("dayprog").style.width = "100%";
+      lbl.textContent = "Martedì 10 novembre";
+      ttl.textContent = "Giro concluso";
+      sub.textContent = "Qui sotto resta tutto il percorso, con testi e fonti.";
+    }
+  }
+
+  function tick(){
+    var now = new Date();
+    var hm = fmt.format(now);
+    var nowM = m(hm);
+    document.getElementById("clock").innerHTML = '<span>ora</span>'+hm;
+    var day = dfmt.format(now);
+    var mode = day < DAY ? "before" : (day > DAY ? "after" : "live");
+    document.getElementById("daynote").hidden = true;
+    document.getElementById("jump").hidden = mode !== "live";
+    if (mode !== "live"){ idle(mode); return; }
+    document.getElementById("trainlbl").textContent = "Al treno 18:05";
+    document.getElementById("boatlbl").textContent = "Vaporetto finale";
+
+    var tr = m("18:05")-nowM, bt = m("17:10")-nowM;
+    document.getElementById("train").textContent = tr>0 ? dur(tr) : "partito";
+    document.getElementById("boat").textContent = bt>0 ? dur(bt) : "andato";
+
+    var start=m("09:55"), end=m("18:05");
+    document.getElementById("dayprog").style.width = Math.max(0,Math.min(100,(nowM-start)/(end-start)*100))+"%";
+
+    // find current / next among rendered items
+    var nodes=[].slice.call(document.querySelectorAll("#stops [data-i]"));
+    var cur=null, next=null;
+    nodes.forEach(function(n){
+      var d=DATA[+n.dataset.i], s=m(d.t[0]), e=m(d.t[1]);
+      n.classList.remove("current","past");
+      var c=n.querySelector(".nowchip"); if(c) c.innerHTML="";
+      if (nowM>=e) n.classList.add("past");
+      else if (nowM>=s && nowM<e){ n.classList.add("current"); cur={n:n,d:d}; if(c) c.innerHTML='<span class="chip now">Adesso</span>'; }
+      else if (!next) next={n:n,d:d};
+    });
+    var lbl=document.getElementById("nowlbl"), ttl=document.getElementById("nowttl"), sub=document.getElementById("nowsub");
+    if (nowM < start){ lbl.textContent="Prima tappa"; ttl.textContent="Arrivo a Venezia alle 09:55"; sub.innerHTML="Poi vaporetto per San Marco."; currentIdx=-1; }
+    else if (nowM >= end){ lbl.textContent="Fine giro"; ttl.textContent="Treno partito, buon rientro"; sub.textContent="Arrivo a Firenze SMN alle 20:20."; currentIdx=-1; }
+    else if (cur){
+      lbl.textContent="Adesso"; ttl.textContent=cur.d.ttl;
+      var left=m(cur.d.t[1])-nowM;
+      sub.innerHTML="Ancora <b>"+dur(left)+"</b> qui"+(next?", poi <b>"+esc(next.d.ttl)+"</b> alle "+next.d.t[0]:"")+".";
+      currentIdx=+cur.n.dataset.i;
+    } else if (next){
+      lbl.textContent="In movimento"; ttl.textContent="Prossima: "+next.d.ttl;
+      sub.innerHTML="Inizio alle <b>"+next.d.t[0]+"</b>, tra "+dur(m(next.d.t[0])-nowM)+".";
+      currentIdx=+next.n.dataset.i;
+    }
+  }
+
+  document.getElementById("jump").addEventListener("click",function(){
+    showView("giro");
+    var el=document.querySelector("#stops .current")||document.querySelector('#stops [data-i="'+currentIdx+'"]');
+    if(!el){ el=document.querySelector("#stops [data-i]:not(.past)"); }
+    if(el){ var y=el.getBoundingClientRect().top+window.scrollY-180; window.scrollTo({top:y,behavior:"smooth"}); }
+  });
+
+  // views
+  var VIEWS=["giro","intro","info"];
+  function showView(v){
+    if (VIEWS.indexOf(v)<0) v="giro";
+    VIEWS.forEach(function(x){
+      document.getElementById("v-"+x).hidden = x!==v;
+      document.getElementById("t-"+x).setAttribute("aria-selected",String(x===v));
+    });
+    if (location.hash.slice(1)!==v){ try{ history.replaceState(null,"","#"+v); }catch(e){} }
+  }
+  [].forEach.call(document.querySelectorAll(".tab"),function(t){ t.addEventListener("click",function(){ showView(this.dataset.view); window.scrollTo({top:0}); }); });
+  window.addEventListener("hashchange",function(){ showView(location.hash.slice(1)); });
+
+  showView(location.hash.slice(1)||"giro");
+  render();
+  setInterval(tick, 20000);
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden) tick(); });
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) { window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }
+</script>
+</body>
+</html>

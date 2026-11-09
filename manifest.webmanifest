@@ -1,0 +1,17 @@
+{
+  "name": "GREZZO Biennale 2026",
+  "short_name": "Biennale",
+  "description": "Giro della Biennale di martedì 10 novembre, con orari live e testi da dire in camera.",
+  "lang": "it",
+  "start_url": "./#giro",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0b0c",
+  "theme_color": "#0b0b0c",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
