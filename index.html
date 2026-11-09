@@ -348,8 +348,8 @@ img{max-width:100%}
       <h2>Come si usa</h2>
       <ul>
         <li><b>Tocca una tappa</b> per aprirla: foto, cosa stiamo guardando, cosa dire in camera e fonti.</li>
-        <li><b>Scorri verso sinistra</b> una tappa per saltarla. Gli orari successivi si ricalcolano subito.</li>
-        <li><b>Scorri verso destra</b> una tappa saltata per rimetterla nel giro.</li>
+        <li><b>Scorri di lato</b> una tappa, in qualsiasi direzione, per saltarla. Gli orari successivi si ricalcolano subito.</li>
+        <li><b>Scorri di nuovo</b> una tappa saltata per rimetterla nel giro.</li>
         <li><b>Tieni premuto mezzo secondo e trascina</b> per cambiare l'ordine. Una tappa si sposta solo dentro la sua zona (San Marco, Arsenale, Giardini). I trasferimenti restano fissi.</li>
         <li><b>Vaporetto finale</b>: in alto vedi a che ora partite dai Giardini e quanto margine resta sul treno delle 18:05. Se il riquadro diventa rosa state sforando: saltate partendo da "Taglio 1", poi "Taglio 2" e così via.</li>
         <li><b>Maps</b> apre la tappa in Google Maps.</li>
@@ -747,7 +747,7 @@ img{max-width:100%}
     var chip = d.cut==="keep" ? '<span class="chip keep">Fisso</span>' : (typeof d.cut==="number" ? '<span class="chip cutn">Taglio '+d.cut+'</span>' : '');
     var time = sk ? '<div class="time skipt">Saltata</div>' : '<div class="time">'+hm(it.s)+'<small>'+hm(it.e)+'</small></div>';
     return '<article class="stop'+(sk?' skipped':'')+'" id="s-'+d.id+'" data-id="'+d.id+'"'+(sk?'':' data-s="'+it.s+'" data-e="'+it.e+'"')+' data-ttl="'+esc(d.ttl)+'">'
-      +'<div class="swipebg" aria-hidden="true"><span class="bl">Riattiva</span><span class="br">Salta</span></div>'
+      +'<div class="swipebg" aria-hidden="true"><span class="bl">'+(sk?'Riattiva':'Salta')+'</span><span class="br">'+(sk?'Riattiva':'Salta')+'</span></div>'
       +'<div class="slide"><div class="row">'+time
       +'<button class="main" type="button" aria-expanded="'+isOpen+'" aria-controls="d-'+d.id+'" data-id="'+d.id+'"><div class="ttl">'+esc(d.ttl)+'</div>'
       +'<div class="meta">'+stars(d.stars)+chip+(d.flag?'<span class="chip flag">'+esc(d.flag)+'</span>':'')+'<span class="nowchip"></span><span class="subt">'+esc(d.sub)+'</span></div></button>'
@@ -893,7 +893,7 @@ img{max-width:100%}
     }
     if(ev&&ev.cancelable) ev.preventDefault();
     if(G.mode==="swipe"){
-      var sk=G.card.classList.contains("skipped"), tx=sk?Math.max(0,Math.min(150,dx)):Math.max(-150,Math.min(0,dx));
+      var tx=Math.max(-150,Math.min(150,dx));
       G.tx=tx;
       G.slide.style.transform="translateX("+tx+"px)";
       G.card.classList.toggle("dir-l",tx<0); G.card.classList.toggle("dir-r",tx>0);
