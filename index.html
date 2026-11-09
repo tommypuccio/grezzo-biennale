@@ -45,7 +45,7 @@ a{color:inherit}
 /* header */
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 12px;border-bottom:1px solid var(--line)}
 .brandrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.brand{font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1;margin:0}
+.brand{min-width:0;white-space:nowrap;font-weight:800;font-size:clamp(18px,5.4vw,26px);letter-spacing:-.02em;line-height:1;margin:0}
 .brand b{color:var(--pink)}
 .clock{border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:700;font-variant-numeric:tabular-nums;font-size:17px;white-space:nowrap}
 .clock span{color:var(--muted);font-weight:500;margin-right:4px}
@@ -83,7 +83,7 @@ a{color:inherit}
 .sec span{font-size:13px;color:var(--muted)}
 .list{display:flex;flex-direction:column;gap:10px}
 .stop{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-.stop.current{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink) inset}
+.stop.current{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink)}
 .stop.past .row{opacity:.55}
 .stop.past:has(.det:not([hidden])) .row{opacity:1}
 .row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:14px}
@@ -138,6 +138,51 @@ a{color:inherit}
 .tip p{margin:0;color:var(--fg)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media (max-width:380px){.row{grid-template-columns:54px 1fr;}.row .maps{grid-column:1/-1}.big{font-size:22px}}
+
+/* header: sync dot + help */
+.hdr-r{display:flex;align-items:center;gap:8px;flex:none}
+.clock{display:inline-flex;align-items:center;gap:7px;padding:6px 12px}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none;box-sizing:border-box}
+.clock[data-sync="live"] .sdot{background:var(--pink);box-shadow:0 0 0 3px var(--pink-soft)}
+.clock[data-sync="sync"] .sdot{background:var(--pink);opacity:.5}
+.clock[data-sync="local"] .sdot{background:transparent;border:1.5px solid var(--muted)}
+.help{width:40px;height:40px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--fg);font:800 17px/1 var(--font);cursor:pointer;flex:none}
+.help[aria-pressed="true"]{border-color:var(--pink);background:var(--pink-soft);color:var(--pink)}
+.tile.warn{border-color:var(--pink)}
+.tile.warn .sub{color:var(--pink);font-weight:700}
+.jump.armed{background:var(--fg);color:var(--bg)}
+
+/* zones, swipe, drag */
+.zone{display:flex;flex-direction:column;gap:16px}
+.stop{position:relative}
+.swipebg{position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;padding:0 20px;background:var(--pink-soft);color:var(--pink);font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:0}
+.swipebg span{opacity:0}
+.stop.swiping .swipebg{opacity:1}
+.stop.dir-r .bl,.stop.dir-l .br{opacity:1}
+.stop.arm .swipebg{background:var(--pink);color:var(--pink-ink)}
+.slide{position:relative;background:var(--card);transition:transform .2s ease}
+.stop.swiping .slide{transition:none}
+.row{touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.stop.dragging{z-index:5;border-color:var(--pink);box-shadow:0 18px 40px rgba(0,0,0,.6)}
+.stop.dragging .det{display:none}
+body.is-dragging{-webkit-user-select:none;user-select:none}
+.stop.skipped{border-style:dashed}
+.stop.skipped .slide{background:var(--bg)}
+.stop.skipped .row{padding-block:10px}
+.stop.skipped .ttl{text-decoration:line-through;color:var(--muted);font-size:15px}
+.stop.skipped .dots,.stop.skipped .subt,.stop.skipped .chip{display:none}
+.time.skipt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:800}
+
+/* photo carousel */
+.car{display:grid;gap:8px;margin-inline:-16px}
+.track{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-inline:16px;scrollbar-width:none;overscroll-behavior-x:contain}
+.track::-webkit-scrollbar{display:none}
+.track:empty{display:none}
+.ph{flex:0 0 86%;margin:0;scroll-snap-align:center;min-width:0}
+.ph:only-child{flex-basis:100%}
+.ph img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;background:var(--card-2)}
+.ph figcaption{font-size:11px;color:var(--muted);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.allph{justify-self:start;margin-left:16px;font-size:13px;font-weight:700;color:var(--pink);text-decoration:none}
 </style>
 <style>
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -153,7 +198,7 @@ img{max-width:100%}
   <header class="top">
     <div class="brandrow">
       <h1 class="brand">GREZZO<b>.</b>BIENNALE</h1>
-      <div class="clock" id="clock" aria-live="off"><span>ora</span>--:--</div>
+      <div class="hdr-r"><div class="clock" id="clock" data-sync="init"><i class="sdot" aria-hidden="true"></i><span id="clocktime">--:--</span></div><button class="help" id="helpbtn" type="button" aria-label="Come si usa" aria-pressed="false">?</button></div>
     </div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" id="t-giro" data-view="giro" aria-selected="true">Giro</button>
@@ -170,10 +215,10 @@ img{max-width:100%}
           <div class="big" id="train">--</div>
           <div class="sub">Venezia SL → Firenze SMN</div>
         </div>
-        <div class="tile">
+        <div class="tile" id="boattile">
           <p class="lbl" id="boatlbl">Vaporetto finale</p>
           <div class="big" id="boat">--</div>
-          <div class="sub">Giardini → Ferrovia</div>
+          <div class="sub" id="boatsub">Giardini → Ferrovia</div>
         </div>
         <div class="tile nowwide">
           <p class="lbl" id="nowlbl">Adesso</p>
@@ -184,11 +229,6 @@ img{max-width:100%}
       </div>
       <p class="note" id="daynote" hidden></p>
       <button class="jump" id="jump">Vai alla tappa di adesso</button>
-
-      <div class="cut">
-        <div class="cuthead"><p class="lbl" style="margin:0">Tempo stretto? Taglia fino a</p><span class="sub" id="cutinfo" style="margin:0"></span></div>
-        <div class="steps" id="steps"></div>
-      </div>
 
       <div id="stops"></div>
     </section>
@@ -299,6 +339,29 @@ img{max-width:100%}
         <a href="https://www.labiennale.org/en/art/2026/information" target="_blank" rel="noopener">Biennale, biglietti</a>
         <a href="https://itneverssst.be/venice-biennale/" target="_blank" rel="noopener">Belgio, performance</a>
       </div>
+    </section>
+    <section id="v-guida" class="read" hidden>
+      <h2>Come si usa</h2>
+      <ul>
+        <li><b>Tocca una tappa</b> per aprirla: foto, cosa stiamo guardando, cosa dire in camera e fonti.</li>
+        <li><b>Scorri verso sinistra</b> una tappa per saltarla. Gli orari successivi si ricalcolano subito.</li>
+        <li><b>Scorri verso destra</b> una tappa saltata per rimetterla nel giro.</li>
+        <li><b>Tieni premuto mezzo secondo e trascina</b> per cambiare l'ordine. Una tappa si sposta solo dentro la sua zona (San Marco, Arsenale, Giardini). I trasferimenti restano fissi.</li>
+        <li><b>Vaporetto finale</b>: in alto vedi a che ora partite dai Giardini e quanto margine resta sul treno delle 18:05. Se il riquadro diventa rosa state sforando: saltate partendo da "Taglio 1", poi "Taglio 2" e così via.</li>
+        <li><b>Maps</b> apre la tappa in Google Maps.</li>
+      </ul>
+      <h2>Modifiche condivise</h2>
+      <p>Saltare o spostare una tappa cambia il giro per tutti: sugli altri telefoni arriva in un paio di secondi.</p>
+      <div class="tip"><p id="syncnow">Collegamento in corso</p></div>
+      <ul>
+        <li>Pallino rosa accanto all'ora: collegati.</li>
+        <li>Pallino grigio: offline. Le modifiche restano sul telefono e partono appena torna la rete.</li>
+        <li>Pallino vuoto: database non attivo, le modifiche restano su questo telefono.</li>
+      </ul>
+      <h2>Ripristino</h2>
+      <p>Rimette ordine e tappe come nel piano di partenza, per tutti.</p>
+      <button class="jump" id="reset" type="button">Ripristina il giro originale</button>
+      <p class="note">Foto: immagini stampa e di documentazione, con il credito sotto ogni foto. Se una non si carica, sparisce da sola.</p>
     </section>
   </main>
 </div>
@@ -425,165 +488,429 @@ img{max-width:100%}
     {kind:"move", t:["17:10","17:50"], ttl:"Vaporetto Giardini → Ferrovia", note:"linee 1, 4.1 o 5.1, circa 40 min. Treno 18:05", map:P.fer}
   ];
 
+  // ---------- photos: hotlinked from official / press pages, always credited ----------
+  var CAL = "https://cdn.contemporaryartlibrary.org/store/image/";
+  var LB = "https://static.labiennale.org/files/styles/seo_thumbnail/public/arte/2026/600x600/";
+  var EF = "https://images.e-flux.com/test/";
+  var EFS = "?width=1200&height=630";
+  function calp(id){ return "https://www.contemporaryartlibrary.org/project/"+id; }
+  var PHOTOS = {
+    olivetti:{g:"https://fondoambiente.it/eventi/hybrids-leandro-erlich-al-negozio-olivetti", p:[
+      [LB+"hybrids-1.jpg?itok=RlgiY092","La Biennale di Venezia"],
+      ["https://fai-platform.imgix.net/media/eventi/negozio-olivetti-hybrids-leandro-erlich-al-negozio-olivetti_243521.png?w=1200&h=630&fit=crop","FAI"],
+      ["https://myartguides.com/wp-content/uploads/2026/04/159741-Leandro_Erlich_The_Cloud_-_L_Espoir_2024_Stampa_digitale_con_inchiostro_ceramico_su_vetro_ultra-chiaro_cassa_in_legno_e_luci_LED_175_91_50_cm_Courtesy_the_artist_Photographer_Duccio_Benvenuti_.jpg","Duccio Benvenuti, courtesy l'artista"]]},
+    taiwan:{g:"https://ocula.com/magazine/conversations/taiwanese-artist-li-yi-fan-venice-biennale/", p:[
+      [LB+"screen-1.jpg?itok=iyaagM_D","La Biennale di Venezia"]]},
+    zimbabwe:{g:"https://myartguides.com/national-participations/venice/zimbabwe-republic-of-2026/", p:[
+      ["https://cdn.sanity.io/images/t4cb1ejj/production/ebaeee9a83c9156c27aa43cf2f8ccdf3d56ecdaa-1280x960.jpg?w=1200&q=80&auto=format","Contemporary And (C&)"]]},
+    etiopia:{g:calp("tegene-kunbi-at-ethiopia-pavilion-venice-73104"), p:[
+      [CAL+"1034775/imagefile/medium-8d5b509404db44bc3c4c6b0c243ecfc7.jpg","Alice Zorzin, Volcano Visual Studio"],
+      [LB+"etiopia1.jpg?itok=EKJUHzel","La Biennale di Venezia"],
+      ["https://www.artealdia.com/var/artealdia_com/storage/images/noticias/el-silencio-tiene-materia-etiopia-lleva-a-la-bienal-de-venecia-la-obra-de-tegene-kunbi/933207-1-esl-AR/EL-SILENCIO-TIENE-MATERIA-ETIOPIA-LLEVA-A-LA-BIENAL-DE-VENECIA-LA-OBRA-DE-TEGENE-KUNBI_full.jpg","Yero Adugna Eticha"]]},
+    kazakhstan:{g:"https://www.designboom.com/art/kazakhstan-pavilion-silence-sensory-landscape-venice-art-biennale-2026-interview/", p:[
+      ["https://www.designboom.com/wp-content/uploads/2026/05/kazakhstan-pavilion-silence-sensory-landscape-venice-art-biennale-2026-interview-designboom-1200.jpg","Luca Girardini, courtesy A&A Worldwide"],
+      ["https://myartguides.com/wp-content/uploads/2026/04/unnamed.jpg","Padiglione Kazakhstan"],
+      ["https://storage.ghost.io/c/16/43/16435400-f27e-4b41-b5f7-d0c24f5ce4de/content/images/size/w1200/2026/04/Smail-Bayaliyev-Pilgrimage-Video-Still-2016-courtesy-Smail-Bayaliyev.jpg","Smail Bayaliyev, Pilgrimage (still)"]]},
+    "ars-mostra":{g:calp("in-minor-keys-at-the-arsenale-at-the-venice-biennale-72692"), p:[
+      ["https://momaa.org/wp-content/uploads/2026/08/IMG_0257.webp","MoMAA, ingresso all'Arsenale"]]},
+    argentina:{g:calp("matias-duville-at-pavilion-of-argentina-venice-72695"), p:[
+      [CAL+"1023384/imagefile/medium-efcfdaf13468f3695cb2c55b38bd30a4.jpg","Padiglione Argentina"],
+      [EF+"eac219a7-27e8-4932-8b8e-7ba30d5be608"+EFS,"Estrella Herrera, courtesy Galería Barro"]]},
+    cile:{g:calp("norton-maza-at-pavilion-of-chile-venice-72696"), p:[
+      [CAL+"1034861/imagefile/medium-5adc452b41f192cb4ddde244912f0c9b.jpg","Padiglione Cile"],
+      ["https://myartguides.com/wp-content/uploads/2026/04/Pavilion-of-Chile-Biennale-Arte-2026-courtesy-of-Norton-Maza_1-scaled-1.jpeg","courtesy Norton Maza"]]},
+    india:{g:calp("geographies-of-distance-remembering-home-at-indian-pavilion-venice-72699"), p:[
+      ["https://www.finestresullarte.info/rivista/immagini/2026/fn/padiglione-india-biennale-venezia-2026-3.jpg","Luca Zambelli Bais / Jacopo Salvi"]]},
+    uzbekistan:{g:calp("the-aural-sea-at-uzbekistan-national-pavilion-venice-72728"), p:[
+      [EF+"fcdfd77a-404a-4812-ace3-0412c751606b"+EFS,"Gerda Studio"],
+      [LB+"uzbekistan1.jpg?itok=eBAtTBra","La Biennale di Venezia"]]},
+    eau:{g:calp("washwasha-at-pavilion-of-the-united-arab-emirates-venice-72727"), p:[
+      [EF+"2ad91232-6c07-45df-8e66-53a3fb8421a0"+EFS,"Ismail Noor, Seeing Things"]]},
+    lettonia:{g:calp("bruno-birmanis-mareunrol-s-at-pavilion-of-latvia-venice-72703"), p:[
+      [CAL+"1027684/imagefile/medium-3a6a8a86b1589730bfa792380e6a4905.jpg","Kristine Madjare"],
+      [LB+"lettonia1.jpg?itok=u3uOJH3r","La Biennale di Venezia"]]},
+    lussemburgo:{g:calp("aline-bouvy-at-luxembourg-pavilion-venice-72698"), p:[
+      [CAL+"1035318/imagefile/medium-17cb82cda69bd7ce0aa3e6b1db71c0e9.jpg","GRAYSC"],
+      [EF+"25b4581e-f4ea-4712-8fdb-313fff3e20eb"+EFS,"Aline Bouvy, La Merde (still)"]]},
+    italia:{g:"https://www.finestresullarte.info/en/contemporary-art/this-is-what-the-italy-2026-pavilion-looks-like-images-from-with-you-with-everything-by-chiara-camoni", p:[
+      ["https://www.finestresullarte.info/rivista/immagini/2026/fn/padiglione-italia-chiara-camoni-con-te-con-tutto-5.jpg","Finestre sull'Arte"],
+      [EF+"21c64aa8-b668-4479-b3c9-d17c9590d4cc"+EFS,"Camilla Maria Santini"]]},
+    spagna:{g:"https://www.e-flux.com/announcements/6787121/oriol-vilanovalos-restos", p:[
+      [EF+"ecce67f9-3d4a-4c99-89c5-f427fe891f69"+EFS,"Roberto Ruiz"],
+      [LB+"spagna1.jpg?itok=Otcv8Fi1","La Biennale di Venezia"]]},
+    belgio:{g:calp("miet-warlop-at-belgian-pavilion-venice-72760"), p:[
+      [CAL+"1032877/imagefile/medium-8e6f254f45e8a907799846e8663cf62f.jpg","Sjoerd Tanghe, Reinout Hiel"],
+      ["https://media.culturedmag.com/uploads/2026/05/07162246/MW-IT_NEVER_SSST-c-Sjoerd_Tanghe-2323-scaled-e1778185443180.jpg","Sjoerd Tanghe"],
+      [EF+"52836d8c-144b-4fc7-aea0-5e2825c3c317"+EFS,"Padiglione Belgio"]]},
+    centrale:{g:calp("in-minor-keys-at-central-pavilion-giardini-venice-72693"), p:[
+      ["https://static.labiennale.org/files/styles/seo_thumbnail/public/arte/2026/artists/600x600/otobong_nkanga4446.jpg?itok=bpie4VHe","La Biennale di Venezia, Otobong Nkanga"],
+      ["https://venezianews.b-cdn.net/wp-content/uploads/2026/07/AVZ_Otobong-Nkanga_4449.jpg","Venezia News, Otobong Nkanga"],
+      [CAL+"1061177/imagefile/medium-caf3b6dae281c47f259654dab9c2715e.jpg","courtesy Lisson Gallery"]]},
+    giappone:{g:calp("ei-arakawa-nash-at-japan-pavilion-venice-72772"), p:[
+      [CAL+"1055657/imagefile/medium-59ae7a1acb5fb446a84abbab6fd14cc8.jpg","Uli Holz"]]},
+    canada:{g:calp("abbas-akhavan-at-canadian-pavilion-venice-72762"), p:[
+      [CAL+"1032852/imagefile/medium-09b048ad8d7fa00e9347f45a14734bc8.jpg","Francesco Barasciutti"],
+      [EF+"4a24f5cd-1cb9-45ba-b465-651af4951070"+EFS,"Francesco Barasciutti"]]},
+    gb:{g:calp("lubaina-himid-at-british-pavilion-venice-72769"), p:[
+      [CAL+"1067624/imagefile/medium-a53dbeeffce725914241aa3fbf02fd5c.jpg","Eva Herzog"],
+      ["https://www.finestresullarte.info/rivista/immagini/2026/fn/padiglione-gran-bretagna-biennale-venezia-2026-16.jpg","Finestre sull'Arte"]]},
+    cechia:{g:"https://kajetjournal.com/2026/05/29/venice-biennale-czech-slovak-pavilion-the-silence-of-the-mole/", p:[
+      ["https://kajetjournal.com/wp-content/uploads/2026/05/Jakub-Jansa-Silence-of-the-Mole-Feature-Pic.jpg","Jakub Jansa"],
+      ["https://myartguides.com/wp-content/uploads/2026/03/P5A1179-scaled.jpg","Shot by Us, Jakub Jansa"]]},
+    danimarca:{g:calp("maja-malou-lyse-at-danish-pavilion-venice-72764"), p:[
+      [CAL+"1034806/imagefile/medium-ad49364fc8ecf322c4cee51d42d14d03.jpg","Ugo Carmeni"]]},
+    grecia:{g:calp("andreas-angelidakis-at-greek-pavilion-venice-72770"), p:[
+      [CAL+"1029748/imagefile/medium-fa28fc1e6db0af5af965db45689a068c.jpg","Padiglione Grecia"],
+      ["https://cdn.mos.cms.futurecdn.net/42esy8SmixamCSJFvvYKGe-1200-80.jpg","Ivan Erofeev"],
+      [LB+"grecia1.jpg?itok=5VBH5nVQ","La Biennale di Venezia"]]}
+  };
+
   var pinSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>';
   function m(s){var p=s.split(":");return +p[0]*60+ +p[1];}
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+  function hm(n){var h=Math.floor(n/60),x=n%60;return (h<10?"0":"")+h+":"+(x<10?"0":"")+x;}
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
   function load(k,d){try{var v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
   function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 
-  var cutLevel = load("gb-cut",0);
+  // ---------- model: zones, durations, order, skipped ----------
+  var SECS=[{k:"sm",label:"San Marco e Riva",gap:5},{k:"ars",label:"Arsenale",gap:0},{k:"gia",label:"Giardini",gap:0}];
+  var STOPS={}, MOVES=[], DEF={sm:[],ars:[],gia:[]};
+  (function(){
+    var si=-1;
+    DATA.forEach(function(d){
+      if(d.sec){ si++; return; }
+      d.dur=m(d.t[1])-m(d.t[0]);
+      if(d.kind==="stop"){ d.sec=SECS[si].k; STOPS[d.id]=d; DEF[d.sec].push(d.id); }
+      else { d.id="mv"+MOVES.length; MOVES.push(d); }
+    });
+  })();
+  // MOVES: 0 arrivo, 1 panino (after San Marco), 2 a piedi ai Giardini (after Arsenale), 3 vaporetto finale
+  var DAY_START=m("09:55"), TRAIN=m("18:05"), LATEST_BOAT=m("17:15"), ARRIVAL_GAP=5, BOAT_GAP=5;
+
+  function blank(){ return {v:0, order:{sm:DEF.sm.slice(),ars:DEF.ars.slice(),gia:DEF.gia.slice()}, skip:{}}; }
+  function norm(s){
+    var o=blank();
+    if(!s||typeof s!=="object") return o;
+    o.v=+s.v||0;
+    SECS.forEach(function(S){
+      var k=S.k, src=(s.order&&Array.isArray(s.order[k]))?s.order[k]:[], seen={}, out=[];
+      src.forEach(function(id){ if(STOPS[id]&&STOPS[id].sec===k&&!seen[id]){ seen[id]=1; out.push(id); } });
+      DEF[k].forEach(function(id){ if(!seen[id]) out.push(id); });
+      o.order[k]=out;
+    });
+    if(s.skip&&typeof s.skip==="object") Object.keys(s.skip).forEach(function(id){ if(STOPS[id]&&s.skip[id]===true) o.skip[id]=true; });
+    return o;
+  }
+  function same(a,b){ return JSON.stringify([a.order,Object.keys(a.skip).sort()])===JSON.stringify([b.order,Object.keys(b.skip).sort()]); }
+
+  var state = norm(load("gb-state", null));
   var open = load("gb-open",{});
 
-  // cut stepper
-  var steps = document.getElementById("steps");
-  for (var i=0;i<=7;i++){
-    var b=document.createElement("button");
-    b.className="step"; b.id="cut-"+i; b.type="button";
-    b.textContent = i===0 ? "No" : String(i);
-    b.setAttribute("aria-pressed", String(i===cutLevel));
-    b.dataset.v=i;
-    b.addEventListener("click", function(){ cutLevel=+this.dataset.v; save("gb-cut",cutLevel); render(); });
-    steps.appendChild(b);
+  function timeline(){
+    var out=[], t=DAY_START;
+    function mv(i){ var d=MOVES[i]; out.push({type:"move",d:d,s:t,e:t+d.dur}); t+=d.dur; }
+    SECS.forEach(function(S,si){
+      out.push({type:"sec",S:S});
+      if(si===0){ mv(0); t+=ARRIVAL_GAP; }
+      var first=true;
+      state.order[S.k].forEach(function(id){
+        var d=STOPS[id];
+        if(state.skip[id]){ out.push({type:"stop",d:d,skip:true}); return; }
+        if(!first) t+=S.gap;
+        first=false;
+        out.push({type:"stop",d:d,s:t,e:t+d.dur});
+        t+=d.dur;
+      });
+      if(si===0) mv(1); else if(si===1) mv(2); else { t+=BOAT_GAP; mv(3); }
+    });
+    return out;
   }
 
+  // ---------- render ----------
+  var stopsEl=document.getElementById("stops");
+  var BOAT_AT=m("17:07");
   function stars(n){var s='<span class="dots" aria-label="Voto '+n+' su 5">';for(var i=1;i<=5;i++)s+='<i class="'+(i<=n?'on':'')+'"></i>';return s+'</span>';}
-
+  function carousel(id){
+    var P=PHOTOS[id]; if(!P||!P.p.length) return '';
+    var n=P.p.length;
+    return '<div class="car"><div class="track">'+P.p.map(function(ph,i){
+      return '<figure class="ph"><img src="'+esc(ph[0])+'" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="var f=this.parentNode;f.parentNode.removeChild(f)"><figcaption>'+(n>1?(i+1)+'/'+n+' · ':'')+'Foto: '+esc(ph[1])+'</figcaption></figure>';
+    }).join('')+'</div>'+(P.g?'<a class="allph" href="'+esc(P.g)+'" target="_blank" rel="noopener">Tutte le foto ›</a>':'')+'</div>';
+  }
+  function moveHTML(it){
+    var d=it.d;
+    return '<div class="move" data-s="'+it.s+'" data-e="'+it.e+'" data-ttl="'+esc(d.ttl)+'"><div class="time">'+hm(it.s)+'</div><div style="min-width:0"><div style="color:var(--fg);font-weight:700">'+esc(d.ttl)+'</div><div style="font-size:12px">'+esc(d.note||"")+'</div></div><a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>';
+  }
+  function stopHTML(it){
+    var d=it.d, isOpen=!!open[d.id], sk=!!it.skip;
+    var chip = d.cut==="keep" ? '<span class="chip keep">Fisso</span>' : (typeof d.cut==="number" ? '<span class="chip cutn">Taglio '+d.cut+'</span>' : '');
+    var time = sk ? '<div class="time skipt">Saltata</div>' : '<div class="time">'+hm(it.s)+'<small>'+hm(it.e)+'</small></div>';
+    return '<article class="stop'+(sk?' skipped':'')+'" id="s-'+d.id+'" data-id="'+d.id+'"'+(sk?'':' data-s="'+it.s+'" data-e="'+it.e+'"')+' data-ttl="'+esc(d.ttl)+'">'
+      +'<div class="swipebg" aria-hidden="true"><span class="bl">Riattiva</span><span class="br">Salta</span></div>'
+      +'<div class="slide"><div class="row">'+time
+      +'<button class="main" type="button" aria-expanded="'+isOpen+'" aria-controls="d-'+d.id+'" data-id="'+d.id+'"><div class="ttl">'+esc(d.ttl)+'</div>'
+      +'<div class="meta">'+stars(d.stars)+chip+'<span class="nowchip"></span><span class="subt">'+esc(d.sub)+'</span></div></button>'
+      +'<a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>'
+      +'<div class="det" id="d-'+d.id+'"'+(isOpen?'':' hidden')+'>'
+      +carousel(d.id)
+      +'<h3>Cosa stiamo guardando</h3><p>'+esc(d.what)+'</p>'
+      +'<h3>Da dire in camera</h3><ul>'+d.say.map(function(s){return '<li>'+esc(s)+'</li>';}).join("")+'</ul>'
+      +'<h3>Per saperne di più</h3><div class="src">'+d.src.map(function(s){return '<a href="'+s[1]+'" target="_blank" rel="noopener">'+esc(s[0])+'</a>';}).join("")+'</div>'
+      +'</div></div></article>';
+  }
   function render(){
-    [].forEach.call(steps.children,function(b){b.setAttribute("aria-pressed",String(+b.dataset.v===cutLevel));});
-    var html="", hiddenN=0, gained=0;
-    DATA.forEach(function(d,idx){
-      if (d.sec){ html+='<div class="sec"><h2>'+esc(d.sec)+'</h2></div>'; return; }
-      if (d.kind==="stop" && typeof d.cut==="number" && d.cut<=cutLevel){ hiddenN++; gained+=m(d.t[1])-m(d.t[0]); return; }
-      if (d.kind==="move"){
-        html+='<div class="move" data-i="'+idx+'"><div class="time">'+d.t[0]+'</div><div style="min-width:0"><div style="color:var(--fg);font-weight:700">'+esc(d.ttl)+'</div><div style="font-size:12px">'+esc(d.note||"")+'</div></div><a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>';
-        return;
-      }
-      var chip = d.cut==="keep" ? '<span class="chip keep">Fisso</span>' : (typeof d.cut==="number" ? '<span class="chip cutn">Taglio '+d.cut+'</span>' : '');
-      var isOpen = !!open[d.id];
-      html+='<article class="stop" data-i="'+idx+'" id="s-'+d.id+'">'
-        +'<div class="row"><div class="time">'+d.t[0]+'<small>'+d.t[1]+'</small></div>'
-        +'<button class="main" type="button" aria-expanded="'+isOpen+'" aria-controls="d-'+d.id+'" data-id="'+d.id+'"><div class="ttl">'+esc(d.ttl)+'</div>'
-        +'<div class="meta">'+stars(d.stars)+chip+'<span class="nowchip"></span><span>'+esc(d.sub)+'</span></div></button>'
-        +'<a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>'
-        +'<div class="det" id="d-'+d.id+'"'+(isOpen?'':' hidden')+'>'
-        +'<h3>Cosa stiamo guardando</h3><p>'+esc(d.what)+'</p>'
-        +'<h3>Da dire in camera</h3><ul>'+d.say.map(function(s){return '<li>'+esc(s)+'</li>';}).join("")+'</ul>'
-        +'<h3>Per saperne di più</h3><div class="src">'+d.src.map(function(s){return '<a href="'+s[1]+'" target="_blank" rel="noopener">'+esc(s[0])+'</a>';}).join("")+'</div>'
-        +'</div></article>';
+    var TL=timeline(), html="", zone=false;
+    TL.forEach(function(it){
+      if(it.type==="sec"){ if(zone){html+='</div>';zone=false;} html+='<div class="sec"><h2>'+esc(it.S.label)+'</h2></div>'; return; }
+      if(it.type==="move"){ if(zone){html+='</div>';zone=false;} html+=moveHTML(it); if(it.d===MOVES[3]) BOAT_AT=it.s; return; }
+      if(!zone){ html+='<div class="zone" data-sec="'+it.d.sec+'">'; zone=true; }
+      html+=stopHTML(it);
     });
-    document.getElementById("stops").innerHTML = html;
-    document.getElementById("cutinfo").textContent = hiddenN ? (hiddenN+" tappe nascoste, +"+gained+" min") : "nessuna tappa nascosta";
-    [].forEach.call(document.querySelectorAll(".main"),function(btn){
-      btn.addEventListener("click",function(){
-        var id=this.dataset.id, det=document.getElementById("d-"+id), on=det.hidden;
-        det.hidden=!on; this.setAttribute("aria-expanded",String(on));
-        open[id]=on; save("gb-open",open);
-      });
-    });
+    if(zone) html+='</div>';
+    stopsEl.innerHTML=html;
     tick();
   }
+  stopsEl.addEventListener("click",function(e){
+    var btn=e.target.closest&&e.target.closest(".main"); if(!btn) return;
+    if(Date.now()-suppressClick<500){ e.preventDefault(); return; }
+    var id=btn.dataset.id, det=document.getElementById("d-"+id), on=det.hidden;
+    det.hidden=!on; btn.setAttribute("aria-expanded",String(on));
+    open[id]=on; save("gb-open",open);
+  });
 
-  // live time (Europe/Rome)
+  // ---------- live time (Europe/Rome) ----------
   var fmt = new Intl.DateTimeFormat("it-IT",{timeZone:"Europe/Rome",hour:"2-digit",minute:"2-digit",hour12:false});
   var dfmt = new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Rome",year:"numeric",month:"2-digit",day:"2-digit"});
-  function dur(min){ if(min<=0) return "0 min"; var h=Math.floor(min/60), mm=min%60; return (h? h+" h ":"")+mm+" min"; }
-  var currentIdx = -1;
-  var DAY = "2026-11-10"; // live mode only on this day (Europe/Rome), from 00:00 to 23:59
+  function dur(min){ if(min<=0) return "0 min"; var h=Math.floor(min/60), x=min%60; return (h? h+" h ":"")+x+" min"; }
+  var DAY = "2026-11-10"; // live mode only on this day (Europe/Rome), 00:00 to 23:59
+  var curEl=null;
+  function $(id){ return document.getElementById(id); }
 
-  function idle(mode){
-    [].forEach.call(document.querySelectorAll("#stops [data-i]"),function(n){
+  function clearMarks(){
+    [].forEach.call(stopsEl.querySelectorAll("[data-s]"),function(n){
       n.classList.remove("current","past");
       var c=n.querySelector(".nowchip"); if(c) c.innerHTML="";
     });
-    currentIdx = -1;
-    document.getElementById("trainlbl").textContent = "Treno di ritorno";
-    document.getElementById("boatlbl").textContent = "Ultimo vaporetto";
-    document.getElementById("train").textContent = "18:05";
-    document.getElementById("boat").textContent = "17:10";
-    var lbl=document.getElementById("nowlbl"), ttl=document.getElementById("nowttl"), sub=document.getElementById("nowsub");
+  }
+  function boatInfo(){
+    var margin=LATEST_BOAT-BOAT_AT, el=$("boatsub");
+    el.textContent = margin>=0 ? "Parte alle "+hm(BOAT_AT)+", margine "+margin+" min" : "Parte alle "+hm(BOAT_AT)+", sfori di "+(-margin)+" min";
+    $("boattile").classList.toggle("warn", margin<0);
+  }
+  function idle(mode){
+    clearMarks(); curEl=null;
+    $("trainlbl").textContent = "Treno di ritorno";
+    $("boatlbl").textContent = "Vaporetto finale";
+    $("train").textContent = "18:05";
+    $("boat").textContent = hm(BOAT_AT);
+    var lbl=$("nowlbl"), ttl=$("nowttl"), sub=$("nowsub");
+    lbl.textContent = "Martedì 10 novembre";
     if (mode === "before"){
-      document.getElementById("dayprog").style.width = "0%";
-      lbl.textContent = "Martedì 10 novembre";
+      $("dayprog").style.width = "0%";
       ttl.textContent = "Treno 07:39 da Firenze SMN";
       sub.innerHTML = "Arrivo a Venezia alle <b>09:55</b>. Conto alla rovescia e tappa di adesso si attivano martedì a mezzanotte.";
     } else {
-      document.getElementById("dayprog").style.width = "100%";
-      lbl.textContent = "Martedì 10 novembre";
+      $("dayprog").style.width = "100%";
       ttl.textContent = "Giro concluso";
       sub.textContent = "Qui sotto resta tutto il percorso, con testi e fonti.";
     }
   }
-
   function tick(){
-    var now = new Date();
-    var hm = fmt.format(now);
-    var nowM = m(hm);
-    document.getElementById("clock").innerHTML = '<span>ora</span>'+hm;
-    var day = dfmt.format(now);
-    var mode = day < DAY ? "before" : (day > DAY ? "after" : "live");
-    document.getElementById("daynote").hidden = true;
-    document.getElementById("jump").hidden = mode !== "live";
+    var now=new Date(), t=fmt.format(now), nowM=m(t);
+    $("clocktime").textContent=t;
+    var day=dfmt.format(now), mode = day < DAY ? "before" : (day > DAY ? "after" : "live");
+    $("jump").hidden = mode !== "live";
+    boatInfo();
     if (mode !== "live"){ idle(mode); return; }
-    document.getElementById("trainlbl").textContent = "Al treno 18:05";
-    document.getElementById("boatlbl").textContent = "Vaporetto finale";
-
-    var tr = m("18:05")-nowM, bt = m("17:10")-nowM;
-    document.getElementById("train").textContent = tr>0 ? dur(tr) : "partito";
-    document.getElementById("boat").textContent = bt>0 ? dur(bt) : "andato";
-
-    var start=m("09:55"), end=m("18:05");
-    document.getElementById("dayprog").style.width = Math.max(0,Math.min(100,(nowM-start)/(end-start)*100))+"%";
-
-    // find current / next among rendered items
-    var nodes=[].slice.call(document.querySelectorAll("#stops [data-i]"));
-    var cur=null, next=null;
+    $("trainlbl").textContent = "Al treno 18:05";
+    $("boatlbl").textContent = "Al vaporetto finale";
+    var tr=TRAIN-nowM, bt=BOAT_AT-nowM;
+    $("train").textContent = tr>0 ? dur(tr) : "partito";
+    $("boat").textContent = bt>0 ? dur(bt) : "andato";
+    $("dayprog").style.width = Math.max(0,Math.min(100,(nowM-DAY_START)/(TRAIN-DAY_START)*100))+"%";
+    var nodes=[].slice.call(stopsEl.querySelectorAll("[data-s]")), cur=null, next=null;
     nodes.forEach(function(n){
-      var d=DATA[+n.dataset.i], s=m(d.t[0]), e=m(d.t[1]);
-      n.classList.remove("current","past");
-      var c=n.querySelector(".nowchip"); if(c) c.innerHTML="";
+      var s=+n.dataset.s, e=+n.dataset.e, c=n.querySelector(".nowchip");
+      n.classList.remove("current","past"); if(c) c.innerHTML="";
       if (nowM>=e){ n.classList.add("past"); if(c) c.innerHTML='<span class="chip">Fatta</span>'; }
-      else if (nowM>=s && nowM<e){ n.classList.add("current"); cur={n:n,d:d}; if(c) c.innerHTML='<span class="chip now">Adesso</span>'; }
-      else if (!next) next={n:n,d:d};
+      else if (nowM>=s){ n.classList.add("current"); cur=n; if(c) c.innerHTML='<span class="chip now">Adesso</span>'; }
+      else if (!next) next=n;
     });
-    var lbl=document.getElementById("nowlbl"), ttl=document.getElementById("nowttl"), sub=document.getElementById("nowsub");
-    if (nowM < start){ lbl.textContent="Prima tappa"; ttl.textContent="Arrivo a Venezia alle 09:55"; sub.innerHTML="Poi vaporetto per San Marco."; currentIdx=-1; }
-    else if (nowM >= end){ lbl.textContent="Fine giro"; ttl.textContent="Treno partito, buon rientro"; sub.textContent="Arrivo a Firenze SMN alle 20:20."; currentIdx=-1; }
+    var lbl=$("nowlbl"), ttl=$("nowttl"), sub=$("nowsub");
+    if (nowM < DAY_START){ lbl.textContent="Prima tappa"; ttl.textContent="Arrivo a Venezia alle 09:55"; sub.innerHTML="Poi vaporetto per San Marco."; curEl=null; }
+    else if (nowM >= TRAIN){ lbl.textContent="Fine giro"; ttl.textContent="Treno partito, buon rientro"; sub.textContent="Arrivo a Firenze SMN alle 20:20."; curEl=null; }
     else if (cur){
-      lbl.textContent="Adesso"; ttl.textContent=cur.d.ttl;
-      var left=m(cur.d.t[1])-nowM;
-      sub.innerHTML="Ancora <b>"+dur(left)+"</b> qui"+(next?", poi <b>"+esc(next.d.ttl)+"</b> alle "+next.d.t[0]:"")+".";
-      currentIdx=+cur.n.dataset.i;
+      lbl.textContent="Adesso"; ttl.textContent=cur.dataset.ttl;
+      sub.innerHTML="Ancora <b>"+dur(+cur.dataset.e-nowM)+"</b> qui"+(next?", poi <b>"+esc(next.dataset.ttl)+"</b> alle "+hm(+next.dataset.s):"")+".";
+      curEl=cur;
     } else if (next){
-      lbl.textContent="In movimento"; ttl.textContent="Prossima: "+next.d.ttl;
-      sub.innerHTML="Inizio alle <b>"+next.d.t[0]+"</b>, tra "+dur(m(next.d.t[0])-nowM)+".";
-      currentIdx=+next.n.dataset.i;
+      lbl.textContent="In movimento"; ttl.textContent="Prossima: "+next.dataset.ttl;
+      sub.innerHTML="Inizio alle <b>"+hm(+next.dataset.s)+"</b>, tra "+dur(+next.dataset.s-nowM)+".";
+      curEl=next;
     }
   }
-
-  document.getElementById("jump").addEventListener("click",function(){
+  $("jump").addEventListener("click",function(){
     showView("giro");
-    var el=document.querySelector("#stops .current")||document.querySelector('#stops [data-i="'+currentIdx+'"]');
-    if(!el){ el=document.querySelector("#stops [data-i]:not(.past)"); }
+    var el=curEl||stopsEl.querySelector("[data-s]:not(.past)");
     if(el){ var y=el.getBoundingClientRect().top+window.scrollY-180; window.scrollTo({top:y,behavior:"smooth"}); }
   });
 
-  // views
-  var VIEWS=["giro","intro","info"];
+  // ---------- gestures: swipe to skip / restore, long press + drag to reorder within a zone ----------
+  var G=null, suppressClick=0, dragging=false, LONG=450, SWIPE=80;
+  function gStart(x,y,target){
+    if(G||!target.closest) return;
+    var row=target.closest(".stop .row"); if(!row||target.closest("a")) return;
+    var card=row.closest(".stop");
+    G={card:card,slide:card.querySelector(".slide"),x0:x,y0:y,x:x,y:y,mode:null,tx:0};
+    G.timer=setTimeout(function(){ if(G&&!G.mode) beginDrag(); },LONG);
+  }
+  function beginDrag(){
+    G.mode="drag"; dragging=true;
+    var c=G.card; G.zone=c.parentNode;
+    c.classList.add("dragging"); document.body.classList.add("is-dragging");
+    G.top0=c.offsetTop; G.py0=G.y+window.scrollY;
+  }
+  function placeDrag(){
+    var c=G.card, y=G.y;
+    var sibs=[].filter.call(G.zone.children,function(n){return n!==c;}), target=null;
+    for(var i=0;i<sibs.length;i++){ var r=sibs[i].getBoundingClientRect(); if(y<r.top+r.height/2){ target=sibs[i]; break; } }
+    if(target){ if(c.nextElementSibling!==target) G.zone.insertBefore(c,target); }
+    else if(G.zone.lastElementChild!==c) G.zone.appendChild(c);
+    c.style.transform="translateY("+((y+window.scrollY)-G.py0-(c.offsetTop-G.top0))+"px)";
+  }
+  function gMove(x,y,ev){
+    if(!G) return;
+    G.x=x; G.y=y;
+    var dx=x-G.x0, dy=y-G.y0;
+    if(!G.mode){
+      if(Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)*1.3){ G.mode="swipe"; clearTimeout(G.timer); G.card.classList.add("swiping"); }
+      else if(Math.abs(dy)>10){ clearTimeout(G.timer); G=null; return; }
+      else return;
+    }
+    if(ev&&ev.cancelable) ev.preventDefault();
+    if(G.mode==="swipe"){
+      var sk=G.card.classList.contains("skipped"), tx=sk?Math.max(0,Math.min(150,dx)):Math.max(-150,Math.min(0,dx));
+      G.tx=tx;
+      G.slide.style.transform="translateX("+tx+"px)";
+      G.card.classList.toggle("dir-l",tx<0); G.card.classList.toggle("dir-r",tx>0);
+      G.card.classList.toggle("arm",Math.abs(tx)>=SWIPE);
+    } else {
+      placeDrag();
+      if(y<110) window.scrollBy(0,-12); else if(y>window.innerHeight-70) window.scrollBy(0,12);
+    }
+  }
+  function gEnd(){
+    if(!G) return;
+    clearTimeout(G.timer);
+    var g=G; G=null;
+    if(g.mode==="swipe"){
+      suppressClick=Date.now();
+      g.slide.style.transform="";
+      g.card.classList.remove("swiping","arm","dir-l","dir-r");
+      if(Math.abs(g.tx)>=SWIPE){
+        var id=g.card.dataset.id;
+        if(state.skip[id]) delete state.skip[id]; else state.skip[id]=true;
+        commit();
+      }
+    } else if(g.mode==="drag"){
+      suppressClick=Date.now(); dragging=false;
+      g.card.classList.remove("dragging"); g.card.style.transform=""; document.body.classList.remove("is-dragging");
+      var k=g.zone.dataset.sec, ids=[].map.call(g.zone.querySelectorAll(".stop"),function(n){return n.dataset.id;});
+      if(ids.join()!==state.order[k].join()){ state.order[k]=ids; commit(); } else render();
+    }
+  }
+  stopsEl.addEventListener("touchstart",function(e){
+    if(e.touches.length!==1){ if(G){ var g=G; G=null; clearTimeout(g.timer); if(g.mode) { g.slide.style.transform=""; g.card.style.transform=""; g.card.classList.remove("dragging","swiping","arm","dir-l","dir-r"); document.body.classList.remove("is-dragging"); dragging=false; render(); } } return; }
+    var t=e.touches[0]; gStart(t.clientX,t.clientY,e.target);
+  },{passive:true});
+  document.addEventListener("touchmove",function(e){ if(!G) return; var t=e.touches[0]; gMove(t.clientX,t.clientY,e); },{passive:false});
+  document.addEventListener("touchend",gEnd);
+  document.addEventListener("touchcancel",gEnd);
+  var lastTouch=0;
+  document.addEventListener("touchstart",function(){ lastTouch=Date.now(); },{passive:true,capture:true});
+  stopsEl.addEventListener("mousedown",function(e){ if(e.button!==0||Date.now()-lastTouch<800) return; gStart(e.clientX,e.clientY,e.target); });
+  document.addEventListener("mousemove",function(e){ if(G&&Date.now()-lastTouch>800) gMove(e.clientX,e.clientY,e); });
+  document.addEventListener("mouseup",function(){ if(Date.now()-lastTouch>800) gEnd(); });
+  stopsEl.addEventListener("contextmenu",function(e){ if(e.target.closest&&e.target.closest(".stop .row")) e.preventDefault(); });
+
+  // ---------- shared state: Vercel function + Upstash Redis, polled every 2 s ----------
+  var API_OK = /^https?:$/.test(location.protocol);
+  var SY={busy:false,pending:load("gb-pending",false)};
+  var SYNC_TXT={live:"Collegato: le modifiche arrivano a tutti",sync:"Invio in corso",offline:"Offline: le modifiche partono appena torna la rete",local:"Database non attivo: le modifiche restano su questo telefono",init:"Collegamento in corso"};
+  function setSync(mode){
+    $("clock").dataset.sync=mode;
+    $("clock").title=SYNC_TXT[mode]||"";
+    var g=$("syncnow"); if(g) g.textContent=SYNC_TXT[mode]||"";
+  }
+  function setPending(p){ SY.pending=p; save("gb-pending",p); }
+  function commit(){
+    save("gb-state",state); setPending(true); render(); push();
+  }
+  function push(){
+    if(!API_OK){ setSync("local"); return; }
+    if(SY.busy) return;
+    SY.busy=true; setSync("sync");
+    var sent=JSON.stringify({order:state.order,skip:state.skip});
+    fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:sent})
+      .then(function(r){ if(r.status===503||r.status===404) throw {local:true}; if(!r.ok) throw {}; return r.json(); })
+      .then(function(s){
+        SY.busy=false;
+        if(JSON.stringify({order:state.order,skip:state.skip})===sent){ state.v=s.v; save("gb-state",state); setPending(false); setSync("live"); }
+        else push();
+      })
+      .catch(function(e){ SY.busy=false; setSync(e&&e.local?"local":"offline"); });
+  }
+  function pull(){
+    if(!API_OK){ setSync("local"); return; }
+    if(SY.busy||G||dragging) return;
+    if(SY.pending){ push(); return; }
+    SY.busy=true;
+    fetch("/api/state?since="+state.v,{cache:"no-store"})
+      .then(function(r){ if(r.status===204) return null; if(r.status===503||r.status===404) throw {local:true}; if(!r.ok) throw {}; return r.json(); })
+      .then(function(s){
+        SY.busy=false; setSync("live");
+        if(!s||SY.pending||G||dragging) return;
+        var n=norm(s); n.v=+s.v||0;
+        var changed=!same(n,state);
+        state=n; save("gb-state",state);
+        if(changed) render();
+      })
+      .catch(function(e){ SY.busy=false; setSync(e&&e.local?"local":"offline"); });
+  }
+  setInterval(function(){ if(!document.hidden) pull(); },2000);
+  window.addEventListener("online",pull);
+
+  // reset, with an in-page confirmation step
+  var resetArm=0;
+  $("reset").addEventListener("click",function(){
+    var b=this;
+    if(Date.now()-resetArm>4000){ resetArm=Date.now(); b.textContent="Sicuro? Tocca di nuovo per confermare"; b.classList.add("armed"); setTimeout(function(){ if(Date.now()-resetArm>=4000){ b.textContent="Ripristina il giro originale"; b.classList.remove("armed"); } },4100); return; }
+    resetArm=0; b.textContent="Fatto, giro originale ripristinato"; b.classList.remove("armed");
+    var v=state.v; state=blank(); state.v=v; commit();
+    setTimeout(function(){ b.textContent="Ripristina il giro originale"; },2500);
+  });
+
+  // ---------- views ----------
+  var VIEWS=["giro","intro","info","guida"];
   function showView(v){
     if (VIEWS.indexOf(v)<0) v="giro";
     VIEWS.forEach(function(x){
-      document.getElementById("v-"+x).hidden = x!==v;
-      document.getElementById("t-"+x).setAttribute("aria-selected",String(x===v));
+      $("v-"+x).hidden = x!==v;
+      var t=$("t-"+x); if(t) t.setAttribute("aria-selected",String(x===v));
     });
+    $("helpbtn").setAttribute("aria-pressed",String(v==="guida"));
     if (location.hash.slice(1)!==v){ try{ history.replaceState(null,"","#"+v); }catch(e){} }
   }
   [].forEach.call(document.querySelectorAll(".tab"),function(t){ t.addEventListener("click",function(){ showView(this.dataset.view); window.scrollTo({top:0}); }); });
+  $("helpbtn").addEventListener("click",function(){ showView(location.hash.slice(1)==="guida"?"giro":"guida"); window.scrollTo({top:0}); });
   window.addEventListener("hashchange",function(){ showView(location.hash.slice(1)); });
 
   showView(location.hash.slice(1)||"giro");
+  setSync(API_OK?"init":"local");
   render();
+  pull();
   setInterval(tick, 20000);
-  document.addEventListener("visibilitychange",function(){ if(!document.hidden) tick(); });
+  document.addEventListener("visibilitychange",function(){ if(!document.hidden){ tick(); pull(); } });
 })();
 </script>
 
