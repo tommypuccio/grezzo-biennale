@@ -515,7 +515,7 @@ img{max-width:100%}
       what:"Rilegge la caverna di Platone nell'epoca della post-verità.",
       say:["Il padiglione greco aprì nel 1934, l'anno dell'incontro tra Hitler e Mussolini a Venezia.","Per Angelidakis i padiglioni dei Giardini sono caverne coloniali e fasciste congelate.","Più che una mostra sembra un club, con divanetti comodissimi."],
       src:[["Finestre sull'Arte",FINESTRE],["Domus",DOMUS]]},
-    {kind:"move", pre:5, t:["17:10","17:50"], ttl:"Vaporetto Giardini → Ferrovia", note:"linee 1, 4.1 o 5.1, circa 40 min. Treno 18:05", map:P.fer}
+    {kind:"move", pre:5, t:["17:10","17:40"], ttl:"Vaporetto 5.2 Giardini → Ferrovia", note:"pontile Giardini A, partenze ai minuti 01, 21, 41, circa 30 min. Ultimo utile 17:21. Treno 18:05", map:MAPS("Giardini Biennale vaporetto, Venezia")}
   ];
 
   // ---------- photos: hotlinked from official / press pages, always credited ----------
@@ -725,7 +725,7 @@ img{max-width:100%}
     });
   })();
   var LAST_MOVE=MOVES[MOVES.length-1];
-  var DAY_START=m("09:55"), TRAIN=m("18:05"), LATEST_BOAT=m("17:15");
+  var DAY_START=m("09:55"), TRAIN=m("18:05"), LATEST_BOAT=m("17:21");
 
   function blank(){ var o={v:0,order:{},skip:{},done:{}}; SECS.forEach(function(S){ o.order[S.k]=DEF[S.k].slice(); }); return o; }
   function norm(s){
