@@ -160,6 +160,13 @@ a{color:inherit}
 .stop.swiping .swipebg{opacity:1}
 .stop.dir-r .bl,.stop.dir-l .br{opacity:1}
 .stop.arm .swipebg{background:var(--pink);color:var(--pink-ink)}
+.stop.dir-r .swipebg{background:rgba(244,244,245,.1);color:var(--fg)}
+.stop.dir-r.arm .swipebg{background:var(--fg);color:var(--bg)}
+.stop.done .row{opacity:.55}
+.stop.done:has(.det:not([hidden])) .row{opacity:1}
+.chip.late{background:var(--fg);border-color:var(--fg);color:var(--bg)}
+.delay{margin:10px 0 0;font-size:13px;font-weight:700;color:var(--muted)}
+.delay.late{color:var(--pink)}
 .slide{position:relative;background:var(--card);transition:transform .2s ease}
 .stop.swiping .slide{transition:none}
 .chip.flag{border-color:var(--pink);color:var(--pink);background:var(--pink-soft)}
@@ -228,6 +235,7 @@ img{max-width:100%}
           <div class="big" id="nowttl">--</div>
           <div class="sub" id="nowsub"></div>
           <div class="bar" aria-hidden="true"><i id="dayprog"></i></div>
+          <p class="delay" id="delay" hidden></p>
         </div>
       </div>
       <p class="note" id="daynote" hidden></p>
@@ -348,8 +356,9 @@ img{max-width:100%}
       <h2>Come si usa</h2>
       <ul>
         <li><b>Tocca una tappa</b> per aprirla: foto, cosa stiamo guardando, cosa dire in camera e fonti.</li>
-        <li><b>Scorri di lato</b> una tappa, in qualsiasi direzione, per saltarla. Gli orari successivi si ricalcolano subito.</li>
-        <li><b>Scorri di nuovo</b> una tappa saltata per rimetterla nel giro.</li>
+        <li><b>Scorri verso destra</b> una tappa quando l'avete finita: diventa "Fatta" con l'ora, e il giro riparte da lì. Se l'avete chiusa prima, recuperate tempo.</li>
+        <li><b>Scorri verso sinistra</b> per saltarla; di nuovo a sinistra per rimetterla. Di nuovo a destra annulla "Fatta".</li>
+        <li><b>Ritardo:</b> se una tappa supera il suo orario e non è segnata come fatta, si allunga da sola, tutte le successive slittano e in alto vedete di quanti minuti siete in ritardo.</li>
         <li><b>Tieni premuto mezzo secondo e trascina</b> per cambiare l'ordine. Una tappa si sposta solo dentro la sua zona (San Marco, Arsenale, Giardini). I trasferimenti restano fissi.</li>
         <li><b>Vaporetto finale</b>: in alto vedi a che ora partite dai Giardini e quanto margine resta sul treno delle 18:05. Se il riquadro diventa rosa state sforando: saltate partendo da "Taglio 1", poi "Taglio 2" e così via.</li>
         <li><b>Maps</b> apre la tappa in Google Maps.</li>
@@ -718,7 +727,7 @@ img{max-width:100%}
   var LAST_MOVE=MOVES[MOVES.length-1];
   var DAY_START=m("09:55"), TRAIN=m("18:05"), LATEST_BOAT=m("17:15");
 
-  function blank(){ var o={v:0,order:{},skip:{}}; SECS.forEach(function(S){ o.order[S.k]=DEF[S.k].slice(); }); return o; }
+  function blank(){ var o={v:0,order:{},skip:{},done:{}}; SECS.forEach(function(S){ o.order[S.k]=DEF[S.k].slice(); }); return o; }
   function norm(s){
     var o=blank();
     if(!s||typeof s!=="object") return o;
@@ -730,14 +739,17 @@ img{max-width:100%}
       o.order[k]=out;
     });
     if(s.skip&&typeof s.skip==="object") Object.keys(s.skip).forEach(function(id){ if(STOPS[id]&&s.skip[id]===true) o.skip[id]=true; });
+    if(s.done&&typeof s.done==="object") Object.keys(s.done).forEach(function(id){ var v=s.done[id]; if(STOPS[id]&&!o.skip[id]&&typeof v==="number"&&v>=0&&v<1440) o.done[id]=Math.round(v); });
     return o;
   }
-  function same(a,b){ return JSON.stringify([a.order,Object.keys(a.skip).sort()])===JSON.stringify([b.order,Object.keys(b.skip).sort()]); }
+  function snap(x){ var d={}; Object.keys(x.done).sort().forEach(function(k){ d[k]=x.done[k]; }); return JSON.stringify([x.order,Object.keys(x.skip).sort(),d]); }
+  function same(a,b){ return snap(a)===snap(b); }
 
   var state = norm(load("gb-state", null));
   var open = load("gb-open",{});
 
-  function timeline(){
+  // nowM = minutes of the day when live (the tour day), null otherwise (pure plan)
+  function timeline(nowM){
     var out=[], t=DAY_START;
     function mv(d){ t+=d.pre||0; out.push({type:"move",d:d,s:t,e:t+d.dur}); t+=d.dur+(d.pad||0); }
     SECS.forEach(function(S){
@@ -749,8 +761,11 @@ img{max-width:100%}
         if(state.skip[id]){ out.push({type:"stop",d:d,skip:true}); return; }
         if(!first) t+=S.gap;
         first=false;
-        out.push({type:"stop",d:d,s:t,e:t+d.dur});
-        t+=d.dur;
+        var it={type:"stop",d:d,s:t,e:t+d.dur}, da=state.done[id];
+        if(typeof da==="number"){ it.done=da; if(nowM!=null){ it.e=da; if(it.s>it.e) it.s=Math.max(DAY_START,it.e-d.dur); } }
+        else if(nowM!=null && nowM>=it.e){ it.late=nowM-it.e; it.e=nowM+1; }
+        out.push(it);
+        t=it.e;
       });
       S.tail.forEach(mv);
     });
@@ -770,14 +785,14 @@ img{max-width:100%}
   }
   function moveHTML(it){
     var d=it.d;
-    return '<div class="move" data-s="'+it.s+'" data-e="'+it.e+'" data-ttl="'+esc(d.ttl)+'"><div class="time">'+hm(it.s)+'</div><div style="min-width:0"><div style="color:var(--fg);font-weight:700">'+esc(d.ttl)+'</div><div style="font-size:12px">'+esc(d.note||"")+'</div></div><a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>';
+    return '<div class="move" id="m-'+d.id+'" data-s="'+it.s+'" data-e="'+it.e+'" data-ttl="'+esc(d.ttl)+'"><div class="time">'+hm(it.s)+'</div><div style="min-width:0"><div style="color:var(--fg);font-weight:700">'+esc(d.ttl)+'</div><div style="font-size:12px">'+esc(d.note||"")+'</div></div><a class="maps" href="'+d.map+'" target="_blank" rel="noopener">'+pinSvg+'Maps</a></div>';
   }
   function stopHTML(it){
-    var d=it.d, isOpen=!!open[d.id], sk=!!it.skip;
+    var d=it.d, isOpen=!!open[d.id], sk=!!it.skip, dn=it.done!=null;
     var chip = d.cut==="keep" ? '<span class="chip keep">Fisso</span>' : (typeof d.cut==="number" ? '<span class="chip cutn">Taglio '+d.cut+'</span>' : '');
     var time = sk ? '<div class="time skipt">Saltata</div>' : '<div class="time">'+hm(it.s)+'<small>'+hm(it.e)+'</small></div>';
-    return '<article class="stop'+(sk?' skipped':'')+'" id="s-'+d.id+'" data-id="'+d.id+'"'+(sk?'':' data-s="'+it.s+'" data-e="'+it.e+'"')+' data-ttl="'+esc(d.ttl)+'">'
-      +'<div class="swipebg" aria-hidden="true"><span class="bl">'+(sk?'Riattiva':'Salta')+'</span><span class="br">'+(sk?'Riattiva':'Salta')+'</span></div>'
+    return '<article class="stop'+(sk?' skipped':'')+(dn?' done':'')+'" id="s-'+d.id+'" data-id="'+d.id+'"'+(sk?'':' data-s="'+it.s+'" data-e="'+it.e+'"')+' data-ttl="'+esc(d.ttl)+'">'
+      +'<div class="swipebg" aria-hidden="true"><span class="bl">'+(dn?'Annulla fatta':'Fatta')+'</span><span class="br">'+(sk?'Riattiva':'Salta')+'</span></div>'
       +'<div class="slide"><div class="row">'+time
       +'<button class="main" type="button" aria-expanded="'+isOpen+'" aria-controls="d-'+d.id+'" data-id="'+d.id+'"><div class="ttl">'+esc(d.ttl)+'</div>'
       +'<div class="meta">'+stars(d.stars)+chip+(d.flag?'<span class="chip flag">'+esc(d.flag)+'</span>':'')+'<span class="nowchip"></span><span class="subt">'+esc(d.sub)+'</span></div></button>'
@@ -790,8 +805,12 @@ img{max-width:100%}
       +'<h3>Per saperne di più</h3><div class="src">'+d.src.map(function(s){return '<a href="'+s[1]+'" target="_blank" rel="noopener">'+esc(s[0])+'</a>';}).join("")+'</div>'
       +'</div></div></article>';
   }
+  var PLAN_BOAT=BOAT_AT;
+  function liveNow(){ var now=new Date(); return dfmt.format(now)===DAY ? m(fmt.format(now)) : null; }
+  function boatOf(TL){ for(var i=0;i<TL.length;i++) if(TL[i].type==="move"&&TL[i].d===LAST_MOVE) return TL[i].s; return BOAT_AT; }
   function render(){
-    var TL=timeline(), html="", zone=false;
+    var TL=timeline(liveNow()), html="", zone=false;
+    PLAN_BOAT=boatOf(timeline(null));
     TL.forEach(function(it){
       if(it.type==="sec"){ if(zone){html+='</div>';zone=false;} html+='<div class="sec"><h2>'+esc(it.S.label)+'</h2></div>'; return; }
       if(it.type==="move"){ if(zone){html+='</div>';zone=false;} html+=moveHTML(it); if(it.d===LAST_MOVE) BOAT_AT=it.s; return; }
@@ -800,7 +819,8 @@ img{max-width:100%}
     });
     if(zone) html+='</div>';
     stopsEl.innerHTML=html;
-    tick();
+    applyLate(TL);
+    tick(true);
   }
   stopsEl.addEventListener("click",function(e){
     var btn=e.target.closest&&e.target.closest(".main"); if(!btn) return;
@@ -818,6 +838,22 @@ img{max-width:100%}
   var curEl=null;
   function $(id){ return document.getElementById(id); }
 
+  function applyLate(TL){
+    TL.forEach(function(it){
+      if(it.type==="stop"&&!it.skip){ var el=document.getElementById("s-"+it.d.id); if(el) el.dataset.late=it.late||0; }
+    });
+  }
+  function patchTimes(TL){
+    TL.forEach(function(it){
+      if(it.type==="sec"||it.skip) return;
+      var el=document.getElementById((it.type==="move"?"m-":"s-")+it.d.id); if(!el) return;
+      if(+el.dataset.s===it.s&&+el.dataset.e===it.e&&+(el.dataset.late||0)===(it.late||0)) return;
+      el.dataset.s=it.s; el.dataset.e=it.e;
+      var tm=el.querySelector(".time");
+      if(it.type==="move") tm.textContent=hm(it.s); else { tm.innerHTML=hm(it.s)+'<small>'+hm(it.e)+'</small>'; el.dataset.late=it.late||0; }
+      if(it.d===LAST_MOVE) BOAT_AT=it.s;
+    });
+  }
   function clearMarks(){
     [].forEach.call(stopsEl.querySelectorAll("[data-s]"),function(n){
       n.classList.remove("current","past");
@@ -830,7 +866,7 @@ img{max-width:100%}
     $("boattile").classList.toggle("warn", margin<0);
   }
   function idle(mode){
-    clearMarks(); curEl=null;
+    clearMarks(); curEl=null; $("delay").hidden=true;
     $("trainlbl").textContent = "Treno di ritorno";
     $("boatlbl").textContent = "Vaporetto finale";
     $("train").textContent = "18:05";
@@ -847,8 +883,9 @@ img{max-width:100%}
       sub.textContent = "Qui sotto resta tutto il percorso, con testi e fonti.";
     }
   }
-  function tick(){
+  function tick(fresh){
     var now=new Date(), t=fmt.format(now), nowM=m(t);
+    if(!fresh && !G && !dragging && dfmt.format(now)===DAY) patchTimes(timeline(nowM));
     $("clocktime").textContent=t;
     var day=dfmt.format(now), mode = day < DAY ? "before" : (day > DAY ? "after" : "live");
     $("jump").hidden = mode !== "live";
@@ -860,12 +897,18 @@ img{max-width:100%}
     $("train").textContent = tr>0 ? dur(tr) : "partito";
     $("boat").textContent = bt>0 ? dur(bt) : "andato";
     $("dayprog").style.width = Math.max(0,Math.min(100,(nowM-DAY_START)/(TRAIN-DAY_START)*100))+"%";
+    var dl=BOAT_AT-PLAN_BOAT, de=$("delay");
+    de.hidden=false;
+    de.className="delay"+(dl>0?" late":"");
+    de.textContent = dl>0 ? "Tabella di marcia: in ritardo di "+dl+" min" : (dl<0 ? "Tabella di marcia: in anticipo di "+(-dl)+" min" : "Tabella di marcia: in orario");
     var nodes=[].slice.call(stopsEl.querySelectorAll("[data-s]")), cur=null, next=null;
     nodes.forEach(function(n){
       var s=+n.dataset.s, e=+n.dataset.e, c=n.querySelector(".nowchip");
+      var isStop=n.classList.contains("stop"), dn=isStop&&n.classList.contains("done"), late=+(n.dataset.late||0);
       n.classList.remove("current","past"); if(c) c.innerHTML="";
-      if (nowM>=e){ n.classList.add("past"); if(c) c.innerHTML='<span class="chip">Fatta</span>'; }
-      else if (nowM>=s){ n.classList.add("current"); cur=n; if(c) c.innerHTML='<span class="chip now">Adesso</span>'; }
+      if (dn){ if(c) c.innerHTML='<span class="chip">Fatta '+hm(state.done[n.dataset.id])+'</span>'; }
+      else if (nowM>=e){ n.classList.add("past"); }
+      else if (nowM>=s){ n.classList.add("current"); cur=n; if(c) c.innerHTML= late>0 ? '<span class="chip late">In ritardo +'+late+' min</span>' : '<span class="chip now">Adesso</span>'; }
       else if (!next) next=n;
     });
     var lbl=$("nowlbl"), ttl=$("nowttl"), sub=$("nowsub");
@@ -873,7 +916,8 @@ img{max-width:100%}
     else if (nowM >= TRAIN){ lbl.textContent="Fine giro"; ttl.textContent="Treno partito, buon rientro"; sub.textContent="Arrivo a Firenze SMN alle 20:20."; curEl=null; }
     else if (cur){
       lbl.textContent="Adesso"; ttl.textContent=cur.dataset.ttl;
-      sub.innerHTML="Ancora <b>"+dur(+cur.dataset.e-nowM)+"</b> qui"+(next?", poi <b>"+esc(next.dataset.ttl)+"</b> alle "+hm(+next.dataset.s):"")+".";
+      var lt=+(cur.dataset.late||0);
+      sub.innerHTML=(lt>0 ? "Doveva finire "+lt+" min fa: swipe a destra quando avete finito" : "Ancora <b>"+dur(+cur.dataset.e-nowM)+"</b> qui")+(next?", poi <b>"+esc(next.dataset.ttl)+"</b>":"")+".";
       curEl=cur;
     } else if (next){
       lbl.textContent="In movimento"; ttl.textContent="Prossima: "+next.dataset.ttl;
@@ -943,7 +987,8 @@ img{max-width:100%}
       g.card.classList.remove("swiping","arm","dir-l","dir-r");
       if(Math.abs(g.tx)>=SWIPE){
         var id=g.card.dataset.id;
-        if(state.skip[id]) delete state.skip[id]; else state.skip[id]=true;
+        if(g.tx<0){ if(state.skip[id]) delete state.skip[id]; else { state.skip[id]=true; delete state.done[id]; } }
+        else { if(state.done[id]!=null) delete state.done[id]; else { state.done[id]=m(fmt.format(new Date())); delete state.skip[id]; } }
         commit();
       }
     } else if(g.mode==="drag"){
@@ -984,12 +1029,12 @@ img{max-width:100%}
     if(!API_OK){ setSync("local"); return; }
     if(SY.busy) return;
     SY.busy=true; setSync("sync");
-    var sent=JSON.stringify({order:state.order,skip:state.skip});
+    var sent=JSON.stringify({order:state.order,skip:state.skip,done:state.done});
     fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:sent})
       .then(function(r){ if(r.status===503||r.status===404) throw {local:true}; if(!r.ok) throw {}; return r.json(); })
       .then(function(s){
         SY.busy=false;
-        if(JSON.stringify({order:state.order,skip:state.skip})===sent){ state.v=s.v; save("gb-state",state); setPending(false); setSync("live"); }
+        if(JSON.stringify({order:state.order,skip:state.skip,done:state.done})===sent){ state.v=s.v; save("gb-state",state); setPending(false); setSync("live"); }
         else push();
       })
       .catch(function(e){ SY.busy=false; setSync(e&&e.local?"local":"offline"); });
@@ -1043,7 +1088,7 @@ img{max-width:100%}
   setSync(API_OK?"init":"local");
   render();
   pull();
-  setInterval(tick, 20000);
+  setInterval(function(){ tick(false); }, 20000);
   document.addEventListener("visibilitychange",function(){ if(!document.hidden){ tick(); pull(); } });
 })();
 </script>

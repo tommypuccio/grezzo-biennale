@@ -37,7 +37,14 @@ function clean(b) {
       if (b.skip[id] === true && id.length < 40) skip[id] = true;
     }
   }
-  return { order, skip };
+  const done = {};
+  if (b && b.done && typeof b.done === "object") {
+    for (const id of Object.keys(b.done).slice(0, 60)) {
+      const v = b.done[id];
+      if (typeof v === "number" && v >= 0 && v < 1440 && id.length < 40 && !skip[id]) done[id] = Math.round(v);
+    }
+  }
+  return { order, skip, done };
 }
 
 module.exports = async (req, res) => {
